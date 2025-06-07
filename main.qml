@@ -32,13 +32,14 @@ ApplicationWindow {
     // Focus timer for auto-focus
     Timer {
         id: focusTimer
-        interval: 250
+        interval: 50  // Reduced from 250ms to 50ms for quicker focus
         repeat: false
         onTriggered: {
             if (!isGridView && stackView.currentItem) {
                 var textArea = stackView.currentItem.findChild("contentArea")
                 if (textArea) {
                     textArea.forceActiveFocus()
+                    textArea.cursorPosition = textArea.length  // Position cursor at end
                 }
             }
         }
@@ -152,6 +153,8 @@ ApplicationWindow {
         currentNoteId = -1
         currentNote = { id: -1, title: "", content: "" }
         showNoteEditor()
+        // Start focus timer immediately after showing editor
+        focusTimer.start()
     }
 
     function showGridView() {
@@ -165,6 +168,8 @@ ApplicationWindow {
         isGridView = false
         showDeleteConfirm = false
         stackView.push(noteEditor)
+        // Always start focus timer when showing editor
+        focusTimer.start()
     }
 
     function editNote(noteId) {
