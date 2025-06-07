@@ -1,0 +1,9 @@
+{
+  "backgroundColor": "#2b2b2b",
+  "cardColor": "#3c3c3c", 
+  "textColor": "#ffffff",
+  "accentColor": "#4a9eff",
+  "fontFamily": "Arial",
+  "fontSize": 14,
+  "cardFontSize": 12
+}
