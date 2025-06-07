@@ -32,7 +32,38 @@ class NotesManager(QObject):
             "accentColor": "#4a9eff",
             "fontFamily": "Arial",
             "fontSize": 14,
-            "cardFontSize": 12
+            "cardFontSize": 12,
+            "shortcuts": {
+                "newNote": "Ctrl+N",
+                "save": "Ctrl+S",
+                "back": "Escape",
+                "delete": "Delete",
+                "confirmDelete": ["Y", "Return"],
+                "cancelDelete": ["N", "Escape"],
+                "quickDelete": "Ctrl+D",
+                "search": "Ctrl+F",
+                "searchNext": "F3",
+                "searchPrev": "Shift+F3",
+                "toggleView": "Tab",
+                "nextNote": ["Down", "J"],
+                "prevNote": ["Up", "K"],
+                "nextNoteHorizontal": ["Right", "L"],
+                "prevNoteHorizontal": ["Left", "H"],
+                "openNote": ["Return", "Space"],
+                "firstNote": "Home",
+                "lastNote": "End",
+                "pageUp": "Page_Up",
+                "pageDown": "Page_Down",
+                "selectAll": "Ctrl+A",
+                "copy": "Ctrl+C",
+                "cut": "Ctrl+X",
+                "paste": "Ctrl+V",
+                "undo": "Ctrl+Z",
+                "redo": "Ctrl+Y",
+                "find": "Ctrl+F",
+                "quit": "Ctrl+Q",
+                "help": "F1"
+            }
         }
         
         try:
@@ -40,6 +71,12 @@ class NotesManager(QObject):
                 with open(self.config_file, 'r') as f:
                     loaded_config = json.load(f)
                     self._config = {**default_config, **loaded_config}
+                    # Ensure shortcuts exist
+                    if "shortcuts" not in self._config:
+                        self._config["shortcuts"] = default_config["shortcuts"]
+                    else:
+                        # Merge with defaults for any missing shortcuts
+                        self._config["shortcuts"] = {**default_config["shortcuts"], **self._config["shortcuts"]}
             else:
                 self._config = default_config
                 self.save_config()
@@ -131,6 +168,25 @@ class NotesManager(QObject):
             if note["id"] == note_id:
                 return note
         return {}
+    
+    @Slot(list, result=list)
+    def searchNotes(self, terms):
+        """Search notes by content and title"""
+        if not terms:
+            return self._notes
+        
+        results = []
+        search_terms = [term.lower() for term in terms]
+        
+        for note in self._notes:
+            content_lower = note["content"].lower()
+            title_lower = note["title"].lower()
+            
+            # Check if all search terms are found
+            if all(term in content_lower or term in title_lower for term in search_terms):
+                results.append(note)
+        
+        return results
 
 def main():
     app = QGuiApplication(sys.argv)
