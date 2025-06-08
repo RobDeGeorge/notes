@@ -1,10 +1,12 @@
 import sys
 import json
 import os
+import re
 from pathlib import Path
+from datetime import datetime
 from PySide6.QtGui import QGuiApplication, QFont
 from PySide6.QtQml import QmlElement, qmlRegisterType
-from PySide6.QtCore import QObject, Signal, Slot, Property, QUrl
+from PySide6.QtCore import QObject, Signal, Slot, Property, QUrl, QTimer
 from PySide6.QtQml import QQmlApplicationEngine
 
 QML_IMPORT_NAME = "NotesApp"
@@ -14,6 +16,10 @@ QML_IMPORT_MAJOR_VERSION = 1
 class NotesManager(QObject):
     notesChanged = Signal()
     configChanged = Signal()
+    filteredNotesChanged = Signal()
+    saveError = Signal(str)
+    loadError = Signal(str)
+    saveSuccess = Signal()
     
     def __init__(self):
         super().__init__()
@@ -21,6 +27,13 @@ class NotesManager(QObject):
         self.config_file = "config.json"
         self._notes = []
         self._config = {}
+        self._next_id = 0
+        self._search_text = ""
+        self._filtered_notes = []
+        
+        # Performance optimization: pre-compiled regex for search
+        self._search_regex = None
+        
         self.load_config()
         self.load_notes()
     
@@ -43,7 +56,13 @@ class NotesManager(QObject):
             "fontFamily": "Arial",
             "fontSize": 14,
             "cardFontSize": 12,
+            "cardTitleFontSize": 14,
             "headerFontSize": 24,
+            "windowWidth": 1280,
+            "windowHeight": 800,           
+            "maxUnsavedChanges": 50,
+            "autoSaveInterval": 1000,
+            "searchDebounceInterval": 300,
             "shortcuts": {
                 "newNote": "Ctrl+N",
                 "save": "Ctrl+S",
@@ -79,7 +98,7 @@ class NotesManager(QObject):
         
         try:
             if os.path.exists(self.config_file):
-                with open(self.config_file, 'r') as f:
+                with open(self.config_file, 'r', encoding='utf-8') as f:
                     loaded_config = json.load(f)
                     # Deep merge to preserve new defaults
                     for key, value in default_config.items():
@@ -87,40 +106,161 @@ class NotesManager(QObject):
                             loaded_config[key] = value
                         elif key == "shortcuts" and isinstance(value, dict):
                             loaded_config[key] = {**value, **loaded_config[key]}
-                    self._config = loaded_config
+                    
+                    # Validate configuration
+                    self._config = self.validate_config(loaded_config, default_config)
             else:
                 self._config = default_config
                 self.save_config()
-        except Exception as e:
-            print(f"Error loading config: {e}")
+        except json.JSONDecodeError:
+            self.loadError.emit("Configuration file is corrupted. Using defaults.")
             self._config = default_config
+            self._backup_file(self.config_file)
+        except Exception as e:
+            self.loadError.emit(f"Error loading config: {str(e)}")
+            self._config = default_config
+    
+    def validate_config(self, config, defaults):
+        """Validate and sanitize configuration values"""
+        validated = config.copy()
+        
+        # Validate font sizes
+        size_keys = ['fontSize', 'cardTitleFontSize', 'headerFontSize']
+        for key in size_keys:
+            if key in validated:
+                try:
+                    size = int(validated[key])
+                    validated[key] = max(8, min(72, size))
+                except (ValueError, TypeError):
+                    validated[key] = defaults[key]
+        
+        # Validate colors
+        color_pattern = re.compile(r'^#[0-9A-Fa-f]{6}$')
+        for key, value in validated.items():
+            if 'Color' in key and not color_pattern.match(str(value)):
+                validated[key] = defaults.get(key, "#ffffff")
+        
+        # Validate numeric values
+        numeric_keys = ['maxUnsavedChanges', 'autoSaveInterval', 'searchDebounceInterval', 'windowWidth', 'windowHeight']
+        for key in numeric_keys:
+            if key in validated:
+                try:
+                    val = int(validated[key])
+                    validated[key] = max(50, val) if key == 'maxUnsavedChanges' else max(100, val)
+                except (ValueError, TypeError):
+                    validated[key] = defaults.get(key, 1000)
+        
+        return validated
     
     def save_config(self):
         try:
-            with open(self.config_file, 'w') as f:
-                json.dump(self._config, f, indent=2)
+            # Write to temporary file first for atomic operation
+            temp_file = self.config_file + '.tmp'
+            with open(temp_file, 'w', encoding='utf-8') as f:
+                json.dump(self._config, f, indent=2, ensure_ascii=False)
+            
+            # Atomic rename
+            os.replace(temp_file, self.config_file)
+            return True
         except Exception as e:
-            print(f"Error saving config: {e}")
+            error_msg = f"Error saving config: {str(e)}"
+            print(error_msg)
+            self.saveError.emit(error_msg)
+            return False
     
     def load_notes(self):
         try:
             if os.path.exists(self.notes_file):
-                with open(self.notes_file, 'r') as f:
-                    self._notes = json.load(f)
+                with open(self.notes_file, 'r', encoding='utf-8') as f:
+                    data = f.read()
+                    if not data.strip():
+                        self._notes = []
+                        self._filtered_notes = []
+                        return
+                    
+                    self._notes = json.loads(data)
+                    
+                    # Validate note structure and find highest ID
+                    max_id = -1
+                    for note in self._notes:
+                        if not all(key in note for key in ['id', 'title', 'content']):
+                            raise ValueError("Invalid note structure")
+                        max_id = max(max_id, note['id'])
+                    
+                    self._next_id = max_id + 1
+                    
+                    # Add timestamps to old notes if missing
+                    for note in self._notes:
+                        if 'created' not in note:
+                            note['created'] = datetime.now().isoformat()
+                        if 'modified' not in note:
+                            note['modified'] = note['created']
+                    
+                    self._filtered_notes = self._notes.copy()
             else:
                 self._notes = []
-        except Exception as e:
-            print(f"Error loading notes: {e}")
+                self._filtered_notes = []
+                
+        except json.JSONDecodeError:
+            self.loadError.emit("Notes file is corrupted. Creating backup...")
+            self._backup_file(self.notes_file)
             self._notes = []
-        self.notesChanged.emit()
+            self._filtered_notes = []
+        except PermissionError:
+            self.loadError.emit("Cannot access notes file. Check file permissions.")
+            self._notes = []
+            self._filtered_notes = []
+        except ValueError as e:
+            self.loadError.emit(str(e))
+            self._backup_file(self.notes_file)
+            self._notes = []
+            self._filtered_notes = []
+        except Exception as e:
+            self.loadError.emit(f"Unexpected error loading notes: {str(e)}")
+            self._notes = []
+            self._filtered_notes = []
+        finally:
+            self.notesChanged.emit()
+            self.filteredNotesChanged.emit()
+    
+    def _backup_file(self, filepath):
+        """Create a backup of the file with timestamp"""
+        try:
+            if os.path.exists(filepath):
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup_path = f"{filepath}.backup_{timestamp}"
+                os.rename(filepath, backup_path)
+                print(f"Backup created: {backup_path}")
+        except Exception as e:
+            print(f"Failed to create backup: {e}")
     
     def save_notes(self):
+        """
+        Write the notes file **in the same order they are held in memory**
+        (no re-sorting).  Uses a temp-file + atomic rename so a crash/power-loss
+        can’t corrupt the main JSON.
+        """
         try:
-            with open(self.notes_file, 'w') as f:
-                json.dump(self._notes, f, indent=2)
+            tmp_path = f"{self.notes_file}.tmp"
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                json.dump(self._notes, f, indent=2, ensure_ascii=False)
+
+            os.replace(tmp_path, self.notes_file)   # atomic on POSIX & Windows
+            self.saveSuccess.emit()
+            return True
+
+        except PermissionError:
+            msg = "Cannot save notes – file is locked or you lack permission."
+            print(msg)
+            self.saveError.emit(msg)
+            return False
+
         except Exception as e:
-            print(f"Error saving notes: {e}")
-    
+            msg = f"Error saving notes: {e}"
+            print(msg)
+            self.saveError.emit(msg)
+            return False
+        
     def generate_title(self, content):
         """Generate a title from the first line of content"""
         if not content.strip():
@@ -128,6 +268,9 @@ class NotesManager(QObject):
         
         # Get first line, remove extra whitespace
         first_line = content.split('\n')[0].strip()
+        
+        # Remove any markdown headers
+        first_line = re.sub(r'^#+\s*', '', first_line)
         
         # Limit to reasonable title length
         if len(first_line) > 50:
@@ -139,39 +282,104 @@ class NotesManager(QObject):
     def notes(self):
         return self._notes
     
+    @Property(list, notify=filteredNotesChanged)
+    def filteredNotes(self):
+        return self._filtered_notes
+    
     @Property('QVariant', notify=configChanged)
     def config(self):
         return self._config
     
+    @Property(str, notify=filteredNotesChanged)
+    def searchText(self):
+        return self._search_text
+    
+    @searchText.setter
+    def searchText(self, value):
+        if self._search_text != value:
+            self._search_text = value
+            self.updateFilteredNotes()
+    
+    @Slot(str)
+    def setSearchText(self, text):
+        self.searchText = text
+    
+    @Slot()
+    def updateFilteredNotes(self):
+        """Update filtered notes based on search text"""
+        if not self._search_text.strip():
+            self._filtered_notes = self._notes.copy()
+            self._search_regex = None
+        else:
+            # Build regex for efficient searching
+            search_terms = self._search_text.lower().split()
+            escaped_terms = [re.escape(term) for term in search_terms]
+            pattern = '.*'.join(escaped_terms)  # All terms must appear in order
+            
+            try:
+                self._search_regex = re.compile(pattern, re.IGNORECASE)
+                self._filtered_notes = []
+                
+                for note in self._notes:
+                    combined_text = f"{note['title']} {note['content']}"
+                    if self._search_regex.search(combined_text):
+                        self._filtered_notes.append(note)
+                        
+            except re.error:
+                # Invalid regex, fall back to simple search
+                self._filtered_notes = self._notes.copy()
+                
+        self.filteredNotesChanged.emit()
+    
     @Slot(str, result=int)
     def createNote(self, content):
-        note_id = len(self._notes)
+        note_id = self._next_id
+        self._next_id += 1
+        
+        now = datetime.now().isoformat()
         title = self.generate_title(content)
+        
         new_note = {
             "id": note_id,
             "title": title,
-            "content": content
+            "content": content,
+            "created": now,
+            "modified": now
         }
-        self._notes.append(new_note)
+        
+        self._notes.insert(0, new_note)  # Add to beginning for most recent first
         self.save_notes()
         self.notesChanged.emit()
+        self.updateFilteredNotes()
         return note_id
     
     @Slot(int, str)
     def updateNote(self, note_id, content):
+        """
+        Replace the body of an existing note **without** changing its position
+        in the list.  If the text hasn’t really changed, we leave the note
+        completely untouched so its modified timestamp (and any autosave) are
+        not needlessly updated.
+        """
         for note in self._notes:
             if note["id"] == note_id:
-                note["title"] = self.generate_title(content)
-                note["content"] = content
+                if note["content"] != content:
+                    note["content"] = content
+                    note["title"] = self.generate_title(content)
+                    note["modified"] = datetime.now().isoformat()
                 break
+
+        # persist + refresh ui
         self.save_notes()
         self.notesChanged.emit()
+        self.updateFilteredNotes()
     
     @Slot(int)
     def deleteNote(self, note_id):
         self._notes = [note for note in self._notes if note["id"] != note_id]
         self.save_notes()
         self.notesChanged.emit()
+        self.updateFilteredNotes()
     
     @Slot(int, result='QVariant')
     def getNote(self, note_id):
@@ -180,24 +388,22 @@ class NotesManager(QObject):
                 return note
         return {}
     
-    @Slot(list, result=list)
-    def searchNotes(self, terms):
-        """Search notes by content and title"""
-        if not terms:
-            return self._notes
-        
-        results = []
-        search_terms = [term.lower() for term in terms]
-        
+    @Slot(int, result='QVariant')
+    def getNotePreview(self, note_id):
+        """Return note preview for grid view - performance optimization"""
         for note in self._notes:
-            content_lower = note["content"].lower()
-            title_lower = note["title"].lower()
-            
-            # Check if all search terms are found
-            if all(term in content_lower or term in title_lower for term in search_terms):
-                results.append(note)
-        
-        return results
+            if note["id"] == note_id:
+                preview_length = 150
+                return {
+                    "id": note["id"],
+                    "title": note["title"],
+                    "preview": note["content"][:preview_length] + "..." 
+                               if len(note["content"]) > preview_length 
+                               else note["content"],
+                    "created": note.get("created", ""),
+                    "modified": note.get("modified", "")
+                }
+        return {}
 
 def main():
     app = QGuiApplication(sys.argv)
