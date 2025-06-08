@@ -1,24 +1,24 @@
 {
-  "backgroundColor":      "#101010",
-  "cardColor":            "#1A1A1A",
-  "textColor":            "#E8E8E8",
-  "accentColor":          "#2196F3",
-  "secondaryTextColor":   "#A0A0A0",
-  "hoverColor":           "#2A2A2A",
-  "selectedCardColor":    "#333333",
-  "borderColor":          "#2D2D2D",
-  "placeholderColor":     "#555555",
-  "deleteButtonColor":    "#F44336",
-  "successColor":         "#4CAF50",
-  "warningColor":         "#FF9800",
-  "searchBarColor":       "#1A1A1A",
-  "searchBarTextColor":   "#E8E8E8",
+  "backgroundColor":    "#101010D0",   // 82 % opacity
+  "cardColor":          "#1A1A1ACC",   // 80 %
+  "textColor":          "#E8E8E8",     // leave text fully opaque
+  "accentColor":        "#2196F3",     // opaque accent
+  "secondaryTextColor": "rgba(160,160,160,0.7)",  // 70 %
+  "hoverColor":         "#2A2A2A80",   // 50 %
+  "selectedCardColor":  "#333333B3",   // 70 %
+  "borderColor":        "#2D2D2DCC",   // 80 %
+  "placeholderColor":   "rgba(85,85,85,0.5)",
+  "deleteButtonColor":  "#F44336",     // keep opaque so it’s obvious
+  "successColor":       "#4CAF50",
+  "warningColor":       "#FF9800",
+  "searchBarColor":     "#1A1A1A80",   // translucent bar
+  "searchBarTextColor": "#E8E8E8",
   "fontFamily": "Victor Mono",
-  "fontSize": 12,
-  "cardFontSize": 4,
+  "fontSize": 24,
+  "cardFontSize": 5,
   "cardTitleFontSize": 14,
   "headerFontSize": 24,
-  "windowWidth": 1040,
+  "windowWidth": 1050,
   "windowHeight": 600,
   "shortcuts": {
     "newNote": "Ctrl+N",

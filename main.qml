@@ -831,6 +831,8 @@ ApplicationWindow {
                 ScrollView {
                     width: parent.width
                     height: parent.height - 80
+                    ScrollBar.vertical.policy:   ScrollBar.AlwaysOff
+                    ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
 
                     GridView {
                         id: notesGrid
