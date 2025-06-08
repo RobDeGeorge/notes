@@ -2,7 +2,7 @@
   {
     "id": 0,
     "title": "fIRST CHAPPTER:",
-    "content": "fIRST CHAPPTER: \nONCE UPON A TIME "
+    "content": "fIRST CHAPPTER: \nONCE UPON A TIME \n\nthis is a note man\n\n\n"
   },
   {
     "id": 3,
@@ -11,6 +11,11 @@
   },
   {
     "id": 2,
+    "title": "chapter",
+    "content": "chapter\n"
+  },
+  {
+    "id": 3,
     "title": "chapter",
     "content": "chapter\n"
   }

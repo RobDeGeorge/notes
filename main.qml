@@ -452,7 +452,7 @@ ApplicationWindow {
                 font.family: notesManager.config.fontFamily
                 font.pixelSize: 14
             }
-            
+
             TextField {
                 id: searchField
                 Layout.fillWidth: true
@@ -479,12 +479,33 @@ ApplicationWindow {
                     exitSearchMode()
                 }
                 
-                // Prevent arrow keys from being handled by search field
+                // Allow navigation keys to work while in search mode
                 Keys.onPressed: {
-                    if (event.key === Qt.Key_Left || event.key === Qt.Key_Right || 
-                        event.key === Qt.Key_Up || event.key === Qt.Key_Down) {
-                        event.accepted = false  // Let the arrow keys bubble up to shortcuts
+                    if (event.key === Qt.Key_Up) {
+                        event.accepted = true
+                        navigateGrid("up")
+                    } else if (event.key === Qt.Key_Down) {
+                        event.accepted = true
+                        navigateGrid("down")
+                    } else if (event.key === Qt.Key_Left) {
+                        event.accepted = true
+                        navigateGrid("left")
+                    } else if (event.key === Qt.Key_Right) {
+                        event.accepted = true
+                        navigateGrid("right")
+                    } else if (event.key === Qt.Key_Return) {
+                        if (filteredNotes.length > 0) {
+                            event.accepted = true
+                            editNote(filteredNotes[selectedNoteIndex].id)
+                        }
+                    } else if (event.key === Qt.Key_Home) {
+                        event.accepted = true
+                        selectedNoteIndex = 0
+                    } else if (event.key === Qt.Key_End) {
+                        event.accepted = true
+                        selectedNoteIndex = Math.max(0, filteredNotes.length - 1)
                     }
+                    // For other keys (typing), let the text field handle them normally
                 }
                 
                 background: Rectangle {
@@ -608,64 +629,137 @@ ApplicationWindow {
     // Help dialog
     Rectangle {
         anchors.centerIn: parent
-        width: 600
-        height: 500
+        width: window.width * 0.8  // Always 80% of screen width
+        height: window.height * 0.8  // Always 80% of screen height
         color: notesManager.config.cardColor
-        radius: 10
+        radius: Math.max(5, width * 0.015)  // Responsive radius
         border.color: notesManager.config.accentColor
-        border.width: 2
+        border.width: Math.max(1, width * 0.003)  // Responsive border
         visible: showHelpDialog
         z: 202
         
         Column {
             anchors.fill: parent
-            anchors.margins: 20
-            spacing: 15
+            anchors.margins: parent.width * 0.04  // 4% margin scales with dialog size
+            spacing: parent.height * 0.02  // 2% spacing scales with dialog height
             
             Text {
                 text: "Keyboard Shortcuts"
                 font.family: notesManager.config.fontFamily
-                font.pixelSize: notesManager.config.headerFontSize
+                font.pixelSize: parent.height * 0.08
                 font.bold: true
                 color: notesManager.config.textColor
                 anchors.horizontalCenter: parent.horizontalCenter
             }
             
-            ScrollView {
+            // Use Grid for better control
+            Grid {
                 width: parent.width
-                height: parent.height - 80
+                height: parent.height * 0.75  // 75% of dialog height for content
+                columns: 1
+                spacing: parent.height * 0.008  // Spacing scales with dialog height
                 
-                Column {
+                HelpItem { 
+                    label: "New Note" 
+                    shortcut: notesManager.config.shortcuts.newNote 
                     width: parent.width
-                    spacing: 8
-                    
-                    HelpItem { label: "New Note"; shortcut: notesManager.config.shortcuts.newNote }
-                    HelpItem { label: "Search"; shortcut: notesManager.config.shortcuts.search }
-                    HelpItem { label: "Navigate"; shortcut: "Arrow keys or HJKL" }
-                    HelpItem { label: "Open Note"; shortcut: "Enter or Space" }
-                    HelpItem { label: "Delete (Grid)"; shortcut: notesManager.config.shortcuts.delete }
-                    HelpItem { label: "Quick Delete (Editor)"; shortcut: notesManager.config.shortcuts.quickDelete }
-                    HelpItem { label: "Save"; shortcut: notesManager.config.shortcuts.save }
-                    HelpItem { label: "Back/Cancel"; shortcut: notesManager.config.shortcuts.back }
-                    HelpItem { label: "Quit"; shortcut: notesManager.config.shortcuts.quit }
-                    HelpItem { label: "Help"; shortcut: notesManager.config.shortcuts.help }
-                    HelpItem { label: "First Note"; shortcut: notesManager.config.shortcuts.firstNote }
-                    HelpItem { label: "Last Note"; shortcut: notesManager.config.shortcuts.lastNote }
+                    itemHeight: parent.height * 0.055  
+                    fontSize: parent.height * 0.035    
+                }
+                HelpItem { 
+                    label: "Search" 
+                    shortcut: notesManager.config.shortcuts.search 
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
+                }
+                HelpItem { 
+                    label: "Navigate" 
+                    shortcut: "Arrow keys or HJKL" 
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
+                }
+                HelpItem { 
+                    label: "Open Note" 
+                    shortcut: "Enter or Space" 
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
+                }
+                HelpItem { 
+                    label: "Delete (Grid)" 
+                    shortcut: notesManager.config.shortcuts.delete 
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
+                }
+                HelpItem { 
+                    label: "Quick Delete (Editor)" 
+                    shortcut: notesManager.config.shortcuts.quickDelete 
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
+                }
+                HelpItem { 
+                    label: "Save" 
+                    shortcut: notesManager.config.shortcuts.save 
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
+                }
+                HelpItem { 
+                    label: "Back/Cancel" 
+                    shortcut: notesManager.config.shortcuts.back 
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
+                }
+                HelpItem { 
+                    label: "Quit" 
+                    shortcut: notesManager.config.shortcuts.quit 
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
+                }
+                HelpItem { 
+                    label: "Help" 
+                    shortcut: notesManager.config.shortcuts.help 
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
+                }
+                HelpItem { 
+                    label: "First Note" 
+                    shortcut: notesManager.config.shortcuts.firstNote 
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
+                }
+                HelpItem { 
+                    label: "Last Note" 
+                    shortcut: notesManager.config.shortcuts.lastNote 
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
                 }
             }
             
             Button {
                 text: "Close"
+                width: parent.width * 0.2  // Button width scales
+                height: parent.height * 0.08  // Button height scales
                 anchors.horizontalCenter: parent.horizontalCenter
                 onClicked: showHelpDialog = false
                 background: Rectangle {
                     color: notesManager.config.accentColor
-                    radius: 5
+                    radius: parent.height * 0.2  // Responsive button radius
                 }
                 contentItem: Text {
                     text: parent.text
                     color: "white"
                     font.family: notesManager.config.fontFamily
+                    font.pixelSize: parent.height * 0.35  // Font scales with button
                     horizontalAlignment: Text.AlignHCenter
                     verticalAlignment: Text.AlignVCenter
                 }
