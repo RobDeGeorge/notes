@@ -3,8 +3,8 @@
   "cardColor": "#3c3c3c", 
   "textColor": "#ffffff",
   "accentColor": "#4a9eff",
-  "fontFamily": "Arial",
-  "fontSize": 14,
+  "fontFamily": "Victor Mono",
+  "fontSize": 24,
   "cardFontSize": 12,
   "shortcuts": {
     "newNote": "Ctrl+N",
