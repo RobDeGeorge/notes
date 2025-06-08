@@ -30,9 +30,20 @@ class NotesManager(QObject):
             "cardColor": "#3c3c3c",
             "textColor": "#ffffff",
             "accentColor": "#4a9eff",
+            "secondaryTextColor": "#b0b0b0",
+            "hoverColor": "#4c4c4c",
+            "selectedCardColor": "#5c5c5c",
+            "borderColor": "#505050",
+            "placeholderColor": "#808080",
+            "deleteButtonColor": "#e74c3c",
+            "successColor": "#27ae60",
+            "warningColor": "#f39c12",
+            "searchBarColor": "#ffffff",
+            "searchBarTextColor": "#2b2b2b",
             "fontFamily": "Arial",
             "fontSize": 14,
             "cardFontSize": 12,
+            "headerFontSize": 24,
             "shortcuts": {
                 "newNote": "Ctrl+N",
                 "save": "Ctrl+S",
@@ -70,13 +81,13 @@ class NotesManager(QObject):
             if os.path.exists(self.config_file):
                 with open(self.config_file, 'r') as f:
                     loaded_config = json.load(f)
-                    self._config = {**default_config, **loaded_config}
-                    # Ensure shortcuts exist
-                    if "shortcuts" not in self._config:
-                        self._config["shortcuts"] = default_config["shortcuts"]
-                    else:
-                        # Merge with defaults for any missing shortcuts
-                        self._config["shortcuts"] = {**default_config["shortcuts"], **self._config["shortcuts"]}
+                    # Deep merge to preserve new defaults
+                    for key, value in default_config.items():
+                        if key not in loaded_config:
+                            loaded_config[key] = value
+                        elif key == "shortcuts" and isinstance(value, dict):
+                            loaded_config[key] = {**value, **loaded_config[key]}
+                    self._config = loaded_config
             else:
                 self._config = default_config
                 self.save_config()

@@ -40,7 +40,7 @@ ApplicationWindow {
         interval: 10  // Reduced from 50
         repeat: false
         onTriggered: {
-            if (!isGridView && stackView.currentItem && !isSearchMode) {
+            if (!isGridView && stackView.currentItem && !isSearchMode && !showDeleteConfirm) {
                 var textArea = stackView.currentItem.findChild("contentArea")
                 if (textArea) {
                     textArea.forceActiveFocus()
@@ -60,10 +60,21 @@ ApplicationWindow {
         onTriggered: navigating = false
     }
 
+    // Focus restoration timer after search
+    Timer {
+        id: restoreFocusTimer
+        interval: 50
+        repeat: false
+        onTriggered: {
+            window.forceActiveFocus()
+            stackView.forceActiveFocus()
+        }
+    }
+
     // Keyboard shortcuts
     Shortcut {
         sequence: notesManager.config.shortcuts.newNote
-        enabled: isGridView  // Only allow new note from grid view
+        enabled: isGridView && !showDeleteConfirm  // Only allow new note from grid view
         onActivated: createNewNote()
     }
     
@@ -153,15 +164,19 @@ ApplicationWindow {
     
     // Delete shortcuts - Fixed to use correct key sequence
     Shortcut {
-        sequence: "Delete"  // Use direct key instead of config
+        sequence: "Delete"
         enabled: isGridView && filteredNotes.length > 0 && !showDeleteConfirm && !isSearchMode
         onActivated: showDeleteConfirm = true
     }
     
     Shortcut {
-        sequence: "Ctrl+D"  // Use direct key instead of config
+        sequence: "Ctrl+D"
         enabled: !isGridView && currentNoteId >= 0 && !showDeleteConfirm && !isSearchMode
-        onActivated: showDeleteConfirm = true
+        onActivated: {
+            showDeleteConfirm = true
+            // Remove focus from text area to allow delete confirmation keys to work
+            window.forceActiveFocus()
+        }
     }
     
     // Delete confirmation shortcuts
@@ -180,15 +195,23 @@ ApplicationWindow {
     Shortcut {
         sequence: "N"
         enabled: showDeleteConfirm
-        onActivated: showDeleteConfirm = false
+        onActivated: {
+            showDeleteConfirm = false
+            if (!isGridView) {
+                focusTimer.start()  // Return focus to text area
+            }
+        }
     }
     
     // Escape shortcuts
     Shortcut {
-        sequence: "Escape"  // Use direct key
+        sequence: "Escape"
         onActivated: {
             if (showDeleteConfirm) {
                 showDeleteConfirm = false
+                if (!isGridView) {
+                    focusTimer.start()  // Return focus to text area
+                }
             } else if (showHelpDialog) {
                 showHelpDialog = false
             } else if (isSearchMode) {
@@ -203,7 +226,7 @@ ApplicationWindow {
     // Save shortcut
     Shortcut {
         sequence: notesManager.config.shortcuts.save
-        enabled: !isGridView
+        enabled: !isGridView && !showDeleteConfirm
         onActivated: saveCurrentNote()
     }
     
@@ -254,8 +277,15 @@ ApplicationWindow {
     function exitSearchMode() {
         isSearchMode = false
         searchText = ""
+        if (searchField) {
+            searchField.text = ""  // Clear the search field
+            searchField.focus = false  // Remove focus from search field
+        }
         filteredNotes = notesManager.notes
         selectedNoteIndex = Math.min(selectedNoteIndex, filteredNotes.length - 1)
+        
+        // Force focus back to the main window with a timer to ensure it takes effect
+        restoreFocusTimer.start()
     }
     
     function performSearch() {
@@ -429,6 +459,8 @@ ApplicationWindow {
                 placeholderText: "Type to search notes..."
                 text: searchText
                 font.family: notesManager.config.fontFamily
+                color: notesManager.config.searchBarTextColor
+                placeholderTextColor: notesManager.config.placeholderColor
                 
                 onTextChanged: {
                     searchText = text
@@ -441,8 +473,22 @@ ApplicationWindow {
                     }
                 }
                 
+                // Handle escape key in search field
+                Keys.onEscapePressed: {
+                    event.accepted = true
+                    exitSearchMode()
+                }
+                
+                // Prevent arrow keys from being handled by search field
+                Keys.onPressed: {
+                    if (event.key === Qt.Key_Left || event.key === Qt.Key_Right || 
+                        event.key === Qt.Key_Up || event.key === Qt.Key_Down) {
+                        event.accepted = false  // Let the arrow keys bubble up to shortcuts
+                    }
+                }
+                
                 background: Rectangle {
-                    color: "white"
+                    color: notesManager.config.searchBarColor
                     radius: 5
                 }
             }
@@ -470,7 +516,12 @@ ApplicationWindow {
         
         MouseArea {
             anchors.fill: parent
-            onClicked: showDeleteConfirm = false
+            onClicked: {
+                showDeleteConfirm = false
+                if (!isGridView) {
+                    focusTimer.start()  // Return focus to text area
+                }
+            }
         }
     }
 
@@ -484,6 +535,7 @@ ApplicationWindow {
         border.width: 2
         visible: showDeleteConfirm
         z: 201
+        focus: showDeleteConfirm  // Take focus when visible
         
         Column {
             anchors.centerIn: parent
@@ -502,7 +554,7 @@ ApplicationWindow {
                 text: "This action cannot be undone."
                 font.family: notesManager.config.fontFamily
                 font.pixelSize: 12
-                color: Qt.lighter(notesManager.config.textColor, 0.7)
+                color: notesManager.config.secondaryTextColor
                 horizontalAlignment: Text.AlignHCenter
                 anchors.horizontalCenter: parent.horizontalCenter
             }
@@ -515,7 +567,7 @@ ApplicationWindow {
                     text: "Yes (Y/Enter)"
                     onClicked: confirmDelete()
                     background: Rectangle {
-                        color: "#e74c3c"
+                        color: notesManager.config.deleteButtonColor
                         radius: 5
                     }
                     contentItem: Text {
@@ -529,10 +581,15 @@ ApplicationWindow {
                 
                 Button {
                     text: "No (N/Esc)"
-                    onClicked: showDeleteConfirm = false
+                    onClicked: {
+                        showDeleteConfirm = false
+                        if (!isGridView) {
+                            focusTimer.start()  // Return focus to text area
+                        }
+                    }
                     background: Rectangle {
                         color: "transparent"
-                        border.color: notesManager.config.textColor
+                        border.color: notesManager.config.borderColor
                         border.width: 1
                         radius: 5
                     }
@@ -568,7 +625,7 @@ ApplicationWindow {
             Text {
                 text: "Keyboard Shortcuts"
                 font.family: notesManager.config.fontFamily
-                font.pixelSize: 20
+                font.pixelSize: notesManager.config.headerFontSize
                 font.bold: true
                 color: notesManager.config.textColor
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -582,89 +639,18 @@ ApplicationWindow {
                     width: parent.width
                     spacing: 8
                     
-                    Text {
-                        text: "New Note: " + notesManager.config.shortcuts.newNote
-                        font.family: notesManager.config.fontFamily
-                        font.pixelSize: 12
-                        color: notesManager.config.textColor
-                    }
-                    
-                    Text {
-                        text: "Search: " + notesManager.config.shortcuts.search
-                        font.family: notesManager.config.fontFamily
-                        font.pixelSize: 12
-                        color: notesManager.config.textColor
-                    }
-                    
-                    Text {
-                        text: "Navigate: Arrow keys or HJKL"
-                        font.family: notesManager.config.fontFamily
-                        font.pixelSize: 12
-                        color: notesManager.config.textColor
-                    }
-                    
-                    Text {
-                        text: "Open Note: Enter or Space"
-                        font.family: notesManager.config.fontFamily
-                        font.pixelSize: 12
-                        color: notesManager.config.textColor
-                    }
-                    
-                    Text {
-                        text: "Delete: " + notesManager.config.shortcuts.delete
-                        font.family: notesManager.config.fontFamily
-                        font.pixelSize: 12
-                        color: notesManager.config.textColor
-                    }
-                    
-                    Text {
-                        text: "Quick Delete: " + notesManager.config.shortcuts.quickDelete
-                        font.family: notesManager.config.fontFamily
-                        font.pixelSize: 12
-                        color: notesManager.config.textColor
-                    }
-                    
-                    Text {
-                        text: "Save: " + notesManager.config.shortcuts.save
-                        font.family: notesManager.config.fontFamily
-                        font.pixelSize: 12
-                        color: notesManager.config.textColor
-                    }
-                    
-                    Text {
-                        text: "Back/Cancel: " + notesManager.config.shortcuts.back
-                        font.family: notesManager.config.fontFamily
-                        font.pixelSize: 12
-                        color: notesManager.config.textColor
-                    }
-                    
-                    Text {
-                        text: "Quit: " + notesManager.config.shortcuts.quit
-                        font.family: notesManager.config.fontFamily
-                        font.pixelSize: 12
-                        color: notesManager.config.textColor
-                    }
-                    
-                    Text {
-                        text: "Help: " + notesManager.config.shortcuts.help
-                        font.family: notesManager.config.fontFamily
-                        font.pixelSize: 12
-                        color: notesManager.config.textColor
-                    }
-                    
-                    Text {
-                        text: "First Note: " + notesManager.config.shortcuts.firstNote
-                        font.family: notesManager.config.fontFamily
-                        font.pixelSize: 12
-                        color: notesManager.config.textColor
-                    }
-                    
-                    Text {
-                        text: "Last Note: " + notesManager.config.shortcuts.lastNote
-                        font.family: notesManager.config.fontFamily
-                        font.pixelSize: 12
-                        color: notesManager.config.textColor
-                    }
+                    HelpItem { label: "New Note"; shortcut: notesManager.config.shortcuts.newNote }
+                    HelpItem { label: "Search"; shortcut: notesManager.config.shortcuts.search }
+                    HelpItem { label: "Navigate"; shortcut: "Arrow keys or HJKL" }
+                    HelpItem { label: "Open Note"; shortcut: "Enter or Space" }
+                    HelpItem { label: "Delete (Grid)"; shortcut: notesManager.config.shortcuts.delete }
+                    HelpItem { label: "Quick Delete (Editor)"; shortcut: notesManager.config.shortcuts.quickDelete }
+                    HelpItem { label: "Save"; shortcut: notesManager.config.shortcuts.save }
+                    HelpItem { label: "Back/Cancel"; shortcut: notesManager.config.shortcuts.back }
+                    HelpItem { label: "Quit"; shortcut: notesManager.config.shortcuts.quit }
+                    HelpItem { label: "Help"; shortcut: notesManager.config.shortcuts.help }
+                    HelpItem { label: "First Note"; shortcut: notesManager.config.shortcuts.firstNote }
+                    HelpItem { label: "Last Note"; shortcut: notesManager.config.shortcuts.lastNote }
                 }
             }
             
@@ -718,7 +704,7 @@ ApplicationWindow {
                             Text {
                                 text: "Note Collection" + (isSearchMode ? " - Search Mode" : "")
                                 font.family: notesManager.config.fontFamily
-                                font.pixelSize: 24
+                                font.pixelSize: notesManager.config.headerFontSize
                                 color: notesManager.config.textColor
                             }
                             
@@ -729,7 +715,7 @@ ApplicationWindow {
                                       notesManager.config.shortcuts.help + " for help"
                                 font.family: notesManager.config.fontFamily
                                 font.pixelSize: 11
-                                color: Qt.lighter(notesManager.config.textColor, 0.7)
+                                color: notesManager.config.secondaryTextColor
                                 opacity: 0.8
                             }
                         }
@@ -743,6 +729,7 @@ ApplicationWindow {
                         
                         Button {
                             text: "New (" + notesManager.config.shortcuts.newNote + ")"
+                            enabled: !showDeleteConfirm
                             onClicked: createNewNote()
                             background: Rectangle {
                                 color: notesManager.config.accentColor
@@ -777,12 +764,12 @@ ApplicationWindow {
                             width: 230
                             height: 180
                             color: index === selectedNoteIndex ? 
-                                    Qt.lighter(notesManager.config.accentColor, 1.3) : 
+                                    notesManager.config.selectedCardColor : 
                                     notesManager.config.cardColor
                             radius: 8
                             border.color: index === selectedNoteIndex ? 
                                             notesManager.config.accentColor : 
-                                            Qt.lighter(notesManager.config.cardColor, 1.2)
+                                            notesManager.config.borderColor
                             border.width: index === selectedNoteIndex ? 3 : 1
                             
                             // Add states for hover
@@ -792,7 +779,7 @@ ApplicationWindow {
                                     when: mouseArea.containsMouse && index !== selectedNoteIndex
                                     PropertyChanges {
                                         target: noteCard
-                                        color: Qt.lighter(notesManager.config.cardColor, 1.1)
+                                        color: notesManager.config.hoverColor
                                     }
                                 },
                                 State {
@@ -800,7 +787,8 @@ ApplicationWindow {
                                     when: index === selectedNoteIndex
                                     PropertyChanges {
                                         target: noteCard
-                                        color: Qt.lighter(notesManager.config.accentColor, 1.3)
+                                        color: notesManager.config.selectedCardColor
+                                        border.color: notesManager.config.accentColor
                                     }
                                 }
                             ]
@@ -838,7 +826,7 @@ ApplicationWindow {
                                     font.pixelSize: notesManager.config.cardFontSize
                                     color: index === selectedNoteIndex ? 
                                             Qt.lighter("white", 0.9) : 
-                                            Qt.lighter(notesManager.config.textColor, 0.8)
+                                            notesManager.config.secondaryTextColor
                                     width: parent.width
                                     height: parent.height - 30
                                     wrapMode: Text.WordWrap
@@ -861,7 +849,7 @@ ApplicationWindow {
             
             // Add StackView status handler for focus when transition completes
             StackView.onStatusChanged: {
-                if (StackView.status === StackView.Active) {
+                if (StackView.status === StackView.Active && !showDeleteConfirm) {
                     var textArea = contentArea
                     if (textArea) {
                         textArea.forceActiveFocus()
@@ -891,7 +879,7 @@ ApplicationWindow {
                             }
                             background: Rectangle {
                                 color: "transparent"
-                                border.color: notesManager.config.textColor
+                                border.color: notesManager.config.borderColor
                                 border.width: 1
                                 radius: 5
                             }
@@ -918,16 +906,19 @@ ApplicationWindow {
                             text: "Auto-saved • " + notesManager.config.shortcuts.save + " to save manually"
                             font.family: notesManager.config.fontFamily
                             font.pixelSize: 12
-                            color: Qt.lighter(notesManager.config.textColor, 0.6)
+                            color: notesManager.config.secondaryTextColor
                             Layout.rightMargin: 15
                         }
                         
                         Button {
                             text: "Delete (" + notesManager.config.shortcuts.quickDelete + ")"
                             visible: currentNoteId >= 0
-                            onClicked: showDeleteConfirm = true
+                            onClicked: {
+                                showDeleteConfirm = true
+                                window.forceActiveFocus()  // Remove focus from text area
+                            }
                             background: Rectangle {
-                                color: "#e74c3c"
+                                color: notesManager.config.deleteButtonColor
                                 radius: 5
                             }
                             contentItem: Text {
@@ -959,6 +950,7 @@ ApplicationWindow {
                                             notesManager.config.shortcuts.back + " - Back to grid\n" +
                                             notesManager.config.shortcuts.quickDelete + " - Delete note\n" +
                                             notesManager.config.shortcuts.help + " - Show all shortcuts"
+                            placeholderTextColor: notesManager.config.placeholderColor
                             text: currentNote.content || ""
                             font.family: notesManager.config.fontFamily
                             font.pixelSize: notesManager.config.fontSize
@@ -968,8 +960,10 @@ ApplicationWindow {
                             
                             // Force focus immediately when component is created
                             Component.onCompleted: {
-                                forceActiveFocus()
-                                cursorPosition = length
+                                if (!showDeleteConfirm) {
+                                    forceActiveFocus()
+                                    cursorPosition = length
+                                }
                             }
                             
                             onTextChanged: {
@@ -988,6 +982,15 @@ ApplicationWindow {
                                 
                                 // Restart auto-save timer
                                 autoSaveTimer.restart()
+                            }
+                            
+                            // Prevent Ctrl+D from inserting character when in text area
+                            Keys.onPressed: {
+                                if (event.key === Qt.Key_D && (event.modifiers & Qt.ControlModifier)) {
+                                    event.accepted = true
+                                    showDeleteConfirm = true
+                                    window.forceActiveFocus()
+                                }
                             }
                             
                             background: Rectangle {
