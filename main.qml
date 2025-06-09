@@ -328,15 +328,15 @@ ApplicationWindow {
 
     function navigateGrid(direction) {
         if (notesManager.filteredNotes.length === 0 || navigating) return
-    
+
         navigating = true
         navigationTimer.restart()
-    
+
         // Simple calculation based on fixed margins and card spacing
         var cols = Math.floor((window.width - 40) / (notesManager.config.cardWidth + 20))
-    
+
         var oldIndex = selectedNoteIndex
-    
+
         switch (direction) {
             case "up":
                 selectedNoteIndex = Math.max(0, selectedNoteIndex - cols)
@@ -903,7 +903,6 @@ ApplicationWindow {
                     }
                 }
                 
-                // Notes grid sectioncontent
                 // Notes grid section
                 ScrollView {
                     width: parent.width
@@ -917,7 +916,7 @@ ApplicationWindow {
 
                         // Simple left-aligned layout with consistent margins
                         leftMargin: 20
-                        rightMargin: 20
+                        rightMargin: 0
                         topMargin: 20
                         bottomMargin: 20
 
