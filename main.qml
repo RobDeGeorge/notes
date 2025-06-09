@@ -871,22 +871,22 @@ ApplicationWindow {
                         cellWidth: notesManager.config.cardWidth + 20
                         cellHeight: notesManager.config.cardHeight + 20
                         model: notesManager.filteredNotes
-                        
+
                         // Enable built-in auto-scrolling
                         currentIndex: selectedNoteIndex
                         highlightFollowsCurrentItem: true
                         keyNavigationEnabled: false  // We handle navigation manually
-                        
+
                         // Optional: Add highlight range for better positioning
                         preferredHighlightBegin: height * 0.2
                         preferredHighlightEnd: height * 0.8
                         highlightRangeMode: GridView.ApplyRange
-                    
+
                         // Performance optimizations
                         cacheBuffer: Math.max(0, height * 2)
                         displayMarginBeginning: 100
                         displayMarginEnd: 100
-                        
+
                         // React to selectedNoteIndex changes from window
                         Connections {
                             target: window
@@ -900,7 +900,7 @@ ApplicationWindow {
                                 recalcTimer.restart()
                             }
                         }
-                    
+
                         Timer {
                             id: recalcTimer
                             interval: 100
@@ -910,7 +910,7 @@ ApplicationWindow {
                                 notesGrid.cellHeight = notesManager.config.cardHeight + 20
                             }
                         }
-                    
+
                         delegate: Rectangle {
                             id: noteCard
                             width: notesManager.config.cardWidth
@@ -923,7 +923,7 @@ ApplicationWindow {
                                             notesManager.config.accentColor : 
                                             notesManager.config.borderColor
                             border.width: index === selectedNoteIndex ? 3 : 1
-                    
+
                             states: [
                                 State {
                                     name: "hovered"
@@ -943,7 +943,7 @@ ApplicationWindow {
                                     }
                                 }
                             ]
-                    
+
                             MouseArea {
                                 id: mouseArea
                                 anchors.fill: parent
@@ -953,16 +953,15 @@ ApplicationWindow {
                                     editNote(modelData.id)
                                 }
                             }
-                    
+
                             Item {
                                 anchors.fill: parent
                                 anchors.margins: 10
-                    
                                 Text {
                                     id: titleText
                                     text: modelData.title
                                     font.family: notesManager.config.fontFamily
-                                    font.pixelSize: 14
+                                    font.pixelSize: notesManager.config.cardTitleFontSize  // Use config value
                                     font.bold: true
                                     color: index === selectedNoteIndex ? "white" : notesManager.config.textColor
                                     width: parent.width
@@ -971,7 +970,7 @@ ApplicationWindow {
                                     anchors.top: parent.top
                                     wrapMode: Text.NoWrap
                                 }
-                    
+                                
                                 Text {
                                     id: contentText
                                     text: {
@@ -979,7 +978,7 @@ ApplicationWindow {
                                         return idx === -1 ? "" : modelData.content.slice(idx + 1);
                                     }
                                     font.family: notesManager.config.fontFamily
-                                    font.pixelSize: 12
+                                    font.pixelSize: notesManager.config.cardFontSize  // Use config value
                                     color: index === selectedNoteIndex ? 
                                             Qt.lighter("white", 0.5) : 
                                             notesManager.config.secondaryTextColor
@@ -991,7 +990,7 @@ ApplicationWindow {
                                     wrapMode: Text.WordWrap
                                     clip: true
                                 }
-                    
+                                
                                 Text {
                                     id: timestampText
                                     text: {
@@ -1000,7 +999,7 @@ ApplicationWindow {
                                             var now = new Date()
                                             var diff = now - date
                                             var days = Math.floor(diff / (1000 * 60 * 60 * 24))
-                    
+                                
                                             if (days === 0) return "Today"
                                             else if (days === 1) return "Yesterday"
                                             else if (days < 7) return days + " days ago"
@@ -1009,7 +1008,7 @@ ApplicationWindow {
                                         return ""
                                     }
                                     font.family: notesManager.config.fontFamily
-                                    font.pixelSize: 10
+                                    font.pixelSize: Math.max(8, notesManager.config.cardFontSize - 2)  // Slightly smaller than content
                                     color: notesManager.config.secondaryTextColor
                                     opacity: 0.5
                                     width: parent.width
