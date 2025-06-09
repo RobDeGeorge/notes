@@ -726,8 +726,8 @@ ApplicationWindow {
                     label: "New Note" 
                     shortcut: notesManager.config.shortcuts.newNote 
                     width: parent.width
-                    itemHeight: 30 
-                    fontSize: 12   
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
                 }
                 HelpItem { 
                     label: "Search" 
@@ -820,27 +820,33 @@ ApplicationWindow {
                     itemHeight: parent.height * 0.055
                     fontSize: parent.height * 0.035
                 }
-            }
-
-            Button {
-                text: "Close"
-                width: parent.width * 0.2
-                height: parent.height * 0.08
-                anchors.horizontalCenter: parent.horizontalCenter
-                onClicked: appState.modal = "none"
-                
-                background: Rectangle {
-                    color: notesManager.config.accentColor
-                    radius: parent.height * 0.2
+                HelpItem { 
+                    label: "Increase Card Height" 
+                    shortcut: notesManager.config.shortcuts.increaseCardHeight
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
                 }
-                
-                contentItem: Text {
-                    text: parent.text
-                    color: "white"
-                    font.family: notesManager.config.fontFamily
-                    font.pixelSize: parent.height * 0.35
-                    horizontalAlignment: Text.AlignHCenter
-                    verticalAlignment: Text.AlignVCenter
+                HelpItem { 
+                    label: "Decrease Card Height" 
+                    shortcut: notesManager.config.shortcuts.decreaseCardHeight
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
+                }
+                 HelpItem { 
+                    label: "Increase Card Width" 
+                    shortcut: notesManager.config.shortcuts.increaseCardWidth
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
+                }
+                HelpItem { 
+                    label: "Decrease Card Width" 
+                    shortcut: notesManager.config.shortcuts.decreaseCardWidth
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
                 }
             }
         }
