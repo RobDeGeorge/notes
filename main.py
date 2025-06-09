@@ -6,7 +6,10 @@ from pathlib import Path
 from datetime import datetime
 from PySide6.QtGui import QGuiApplication, QFont
 from PySide6.QtQml import QmlElement, qmlRegisterType
-from PySide6.QtCore import QObject, Signal, Slot, Property, QUrl, QTimer, Qt
+from PySide6.QtCore import (
+    QAbstractListModel, QModelIndex,
+    Qt, Signal, Slot, Property, QUrl, QTimer, QByteArray
+)
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtWidgets import QApplication  # Need this for widget attributes
 
@@ -14,7 +17,7 @@ QML_IMPORT_NAME = "NotesApp"
 QML_IMPORT_MAJOR_VERSION = 1
 
 @QmlElement
-class NotesManager(QObject):
+class NotesManager(QAbstractListModel):
     notesChanged = Signal()
     configChanged = Signal()
     filteredNotesChanged = Signal()
@@ -22,8 +25,52 @@ class NotesManager(QObject):
     loadError = Signal(str)
     saveSuccess = Signal()
     
+    # ---------------------------------------------------
+    # 1)  Role constants live at class scope
+    # ---------------------------------------------------
+    IdRole       = Qt.UserRole + 1
+    TitleRole    = Qt.UserRole + 2
+    ContentRole  = Qt.UserRole + 3
+    CreatedRole  = Qt.UserRole + 4
+    ModifiedRole = Qt.UserRole + 5
+
+    # ---------------------------------------------------
+    # 2)  Proper list-model overrides
+    # ---------------------------------------------------
+    def roleNames(self):
+        return {
+            self.IdRole:       b"id",
+            self.TitleRole:    b"title",
+            self.ContentRole:  b"content",
+            self.CreatedRole:  b"created",
+            self.ModifiedRole: b"modified",
+        }
+
+    def rowCount(self, parent=QModelIndex()):
+        return len(self._filtered_notes)
+
+    def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid() or index.row() >= len(self._filtered_notes):
+            return None
+        
+        note = self._filtered_notes[index.row()]
+        
+        if role == self.IdRole:
+            return note.get("id", -1)
+        elif role == self.TitleRole:
+            return note.get("title", "")
+        elif role == self.ContentRole:
+            return note.get("content", "")
+        elif role == self.CreatedRole:
+            return note.get("created", "")
+        elif role == self.ModifiedRole:
+            return note.get("modified", "")
+        
+        return None
+    
     def __init__(self):
         super().__init__()
+
         self.notes_file = "notes.json"
         self.config_file = "config.json"
         self._notes = []
@@ -59,47 +106,53 @@ class NotesManager(QObject):
             "cardFontSize": 12,
             "cardTitleFontSize": 14,
             "headerFontSize": 24,
-            "cardWidth": 250,        # Add this
-            "cardHeight": 200,       # Add this
+            "cardWidth": 250,
+            "cardHeight": 200,
             "windowWidth": 1280,
             "windowHeight": 800,           
             "maxUnsavedChanges": 50,
             "autoSaveInterval": 1000,
             "searchDebounceInterval": 300,
             "shortcuts": {
-            "newNote": "Ctrl+N",
-            "save": "Ctrl+S",
-            "back": "Escape",
-            "delete": "Delete",
-            "confirmDelete": ["Y", "Return"],
-            "cancelDelete": ["N", "Escape"],
-            "quickDelete": "Ctrl+D",
-            "search": "Ctrl+F",
-            "searchNext": "F3",
-            "searchPrev": "Shift+F3",
-            "toggleView": "Tab",
-            "nextNote": ["Down", "J"],
-            "prevNote": ["Up", "K"],
-            "nextNoteHorizontal": ["Right", "L"],
-            "prevNoteHorizontal": ["Left", "H"],
-            "openNote": ["Return", "Space"],
-            "firstNote": "Home",
-            "lastNote": "End",
-            "pageUp": "Page_Up",
-            "pageDown": "Page_Down",
-            "selectAll": "Ctrl+A",
-            "copy": "Ctrl+C",
-            "cut": "Ctrl+X",
-            "paste": "Ctrl+V",
-            "undo": "Ctrl+Z",
-            "redo": "Ctrl+Y",
-            "find": "Ctrl+F",
-            "quit": "Ctrl+Q",
-            "help": "F1",
-            "increaseCardTitleFontSize": "Ctrl+]",
-            "decreaseCardTitleFontSize": "Ctrl+[",
-            "increaseFontSize": "Ctrl++",   
-            "decreaseFontSize": "Ctrl+-"    
+                "newNote": "Ctrl+N",
+                "save": "Ctrl+S",
+                "back": "Escape",
+                "delete": "Delete",
+                "confirmDelete": ["Y", "Return"],
+                "cancelDelete": ["N", "Escape"],
+                "quickDelete": "Ctrl+D",
+                "search": "Ctrl+F",
+                "searchNext": "F3",
+                "searchPrev": "Shift+F3",
+                "toggleView": "Tab",
+                "nextNote": ["Down", "J"],
+                "prevNote": ["Up", "K"],
+                "nextNoteHorizontal": ["Right", "L"],
+                "prevNoteHorizontal": ["Left", "H"],
+                "openNote": ["Return", "Space"],
+                "firstNote": "Home",
+                "lastNote": "End",
+                "pageUp": "Page_Up",
+                "pageDown": "Page_Down",
+                "selectAll": "Ctrl+A",
+                "copy": "Ctrl+C",
+                "cut": "Ctrl+X",
+                "paste": "Ctrl+V",
+                "undo": "Ctrl+Z",
+                "redo": "Ctrl+Y",
+                "find": "Ctrl+F",
+                "quit": "Ctrl+Q",
+                "help": "F1",
+                "increaseCardTitleFontSize": "Ctrl+]",
+                "decreaseCardTitleFontSize": "Ctrl+[",
+                "increaseFontSize": "Ctrl+=",   
+                "decreaseFontSize": "Ctrl+-",
+                "increaseCardFontSize": "Ctrl+9",
+                "decreaseCardFontSize": "Ctrl+0",
+                "increaseCardWidth": "Ctrl+Shift+Right",
+                "decreaseCardWidth": "Ctrl+Shift+Left",
+                "increaseCardHeight": "Ctrl+Shift+Down",
+                "decreaseCardHeight": "Ctrl+Shift+Up"    
             }
         }
 
@@ -258,7 +311,7 @@ class NotesManager(QObject):
         """
         Write the notes file **in the same order they are held in memory**
         (no re-sorting).  Uses a temp-file + atomic rename so a crash/power-loss
-        can’t corrupt the main JSON.
+        can't corrupt the main JSON.
         """
         try:
             tmp_path = f"{self.notes_file}.tmp"
@@ -326,29 +379,20 @@ class NotesManager(QObject):
     
     @Slot()
     def updateFilteredNotes(self):
-        """Update filtered notes based on search text"""
-        if not self._search_text.strip():
-            self._filtered_notes = self._notes.copy()
-            self._search_regex = None
+        """Update filtered notes and properly notify the model"""
+        self.beginResetModel()
+        
+        if self._search_text.strip():
+            search_pattern = re.compile(re.escape(self._search_text), re.IGNORECASE)
+            self._filtered_notes = [
+                note for note in self._notes
+                if (search_pattern.search(note.get("title", "")) or 
+                    search_pattern.search(note.get("content", "")))
+            ]
         else:
-            # Build regex for efficient searching
-            search_terms = self._search_text.lower().split()
-            escaped_terms = [re.escape(term) for term in search_terms]
-            pattern = '.*'.join(escaped_terms)  # All terms must appear in order
-            
-            try:
-                self._search_regex = re.compile(pattern, re.IGNORECASE)
-                self._filtered_notes = []
-                
-                for note in self._notes:
-                    combined_text = f"{note['title']} {note['content']}"
-                    if self._search_regex.search(combined_text):
-                        self._filtered_notes.append(note)
-                        
-            except re.error:
-                # Invalid regex, fall back to simple search
-                self._filtered_notes = self._notes.copy()
-                
+            self._filtered_notes = list(self._notes)
+        
+        self.endResetModel()
         self.filteredNotesChanged.emit()
     
     @Slot(str, result=int)
@@ -367,39 +411,70 @@ class NotesManager(QObject):
             "modified": now
         }
         
-        self._notes.insert(0, new_note)  # Add to beginning for most recent first
+        # Add to notes list
+        self._notes.insert(0, new_note)
+        
+        # Update filtered notes
+        if self._search_text.strip():
+            search_pattern = re.compile(re.escape(self._search_text), re.IGNORECASE)
+            if (search_pattern.search(title) or search_pattern.search(content)):
+                self.beginInsertRows(QModelIndex(), 0, 0)
+                self._filtered_notes.insert(0, new_note)
+                self.endInsertRows()
+        else:
+            self.beginInsertRows(QModelIndex(), 0, 0)
+            self._filtered_notes.insert(0, new_note)
+            self.endInsertRows()
+        
         self.save_notes()
         self.notesChanged.emit()
-        self.updateFilteredNotes()
         return note_id
     
     @Slot(int, str)
     def updateNote(self, note_id, content):
-        """
-        Replace the body of an existing note **without** changing its position
-        in the list.  If the text hasn’t really changed, we leave the note
-        completely untouched so its modified timestamp (and any autosave) are
-        not needlessly updated.
-        """
-        for note in self._notes:
+        """Update note content without changing position"""
+        # Find in main notes list
+        for i, note in enumerate(self._notes):
             if note["id"] == note_id:
                 if note["content"] != content:
                     note["content"] = content
                     note["title"] = self.generate_title(content)
                     note["modified"] = datetime.now().isoformat()
+                    
+                    # Find in filtered notes
+                    for j, filtered_note in enumerate(self._filtered_notes):
+                        if filtered_note["id"] == note_id:
+                            self._filtered_notes[j] = note
+                            # Notify model of change
+                            idx = self.index(j)
+                            self.dataChanged.emit(idx, idx, [
+                                self.TitleRole, 
+                                self.ContentRole, 
+                                self.ModifiedRole
+                            ])
+                            break
+                    
+                    self.save_notes()
                 break
-
-        # persist + refresh ui
-        self.save_notes()
-        self.notesChanged.emit()
-        self.updateFilteredNotes()
     
     @Slot(int)
     def deleteNote(self, note_id):
-        self._notes = [note for note in self._notes if note["id"] != note_id]
+        # Find and remove from main list
+        for i, note in enumerate(self._notes):
+            if note["id"] == note_id:
+                self._notes.pop(i)
+                break
+        
+        # Find and remove from filtered list
+        for i, note in enumerate(self._filtered_notes):
+            if note["id"] == note_id:
+                self.beginRemoveRows(QModelIndex(), i, i)
+                self._filtered_notes.pop(i)
+                self.endRemoveRows()
+                break
+        
         self.save_notes()
         self.notesChanged.emit()
-        self.updateFilteredNotes()
     
     @Slot(int, result='QVariant')
     def getNote(self, note_id):
@@ -409,21 +484,19 @@ class NotesManager(QObject):
         return {}
     
     @Slot(int, result='QVariant')
-    def getNotePreview(self, note_id):
-        """Return note preview for grid view - performance optimization"""
-        for note in self._notes:
-            if note["id"] == note_id:
-                preview_length = 150
-                return {
-                    "id": note["id"],
-                    "title": note["title"],
-                    "preview": note["content"][:preview_length] + "..." 
-                               if len(note["content"]) > preview_length 
-                               else note["content"],
-                    "created": note.get("created", ""),
-                    "modified": note.get("modified", "")
-                }
-        return {}
+    def getNoteById(self, note_id):
+        """Get note by ID from filtered notes"""
+        for note in self._filtered_notes:
+            if note.get("id") == note_id:
+                return note
+        return None
+
+    @Slot(int, result='QVariant')
+    def getNoteByIndex(self, index):
+        """Get note by index from filtered notes"""
+        if 0 <= index < len(self._filtered_notes):
+            return self._filtered_notes[index]
+        return None
 
     @Slot()
     def increaseFontSize(self):
@@ -489,7 +562,7 @@ class NotesManager(QObject):
     def increaseCardWidth(self):
         """Increase card width"""
         old_width = self._config["cardWidth"]
-        self._config["cardWidth"] = min(500, self._config["cardWidth"] + 1)
+        self._config["cardWidth"] = min(500, self._config["cardWidth"] + 10)
         
         if self._config["cardWidth"] != old_width:
             self.save_config()
@@ -499,7 +572,7 @@ class NotesManager(QObject):
     def decreaseCardWidth(self):
         """Decrease card width"""
         old_width = self._config["cardWidth"]
-        self._config["cardWidth"] = max(150, self._config["cardWidth"] - 1)
+        self._config["cardWidth"] = max(150, self._config["cardWidth"] - 10)
         
         if self._config["cardWidth"] != old_width:
             self.save_config()
@@ -509,7 +582,7 @@ class NotesManager(QObject):
     def increaseCardHeight(self):
         """Increase card height"""
         old_height = self._config["cardHeight"]
-        self._config["cardHeight"] = min(400, self._config["cardHeight"] + 1)
+        self._config["cardHeight"] = min(400, self._config["cardHeight"] + 10)
         
         if self._config["cardHeight"] != old_height:
             self.save_config()
@@ -519,7 +592,7 @@ class NotesManager(QObject):
     def decreaseCardHeight(self):
         """Decrease card height"""
         old_height = self._config["cardHeight"]
-        self._config["cardHeight"] = max(120, self._config["cardHeight"] - 1)
+        self._config["cardHeight"] = max(120, self._config["cardHeight"] - 10)
         
         if self._config["cardHeight"] != old_height:
             self.save_config()

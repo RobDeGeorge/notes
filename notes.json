@@ -37,16 +37,16 @@
   {
     "id": 2,
     "title": "chapter",
-    "content": "chapter\n1",
+    "content": "chapter\n\n1x",
     "created": "2025-06-08T08:18:57.508853",
-    "modified": "2025-06-08T18:59:11.551571"
+    "modified": "2025-06-08T22:41:16.856687"
   },
   {
     "id": 1,
     "title": "Home Network Setup",
-    "content": "Home Network Setup\n\nRouter: ASUS RT-AX88U\nIP: 192.168.1.1\nAdmin: admin / [in password manager]\n\nDevices:\n- Desktop PC: 192.168.1.100 (static)\n- NAS: 192.168.1.101 (static)\n- Printer: 192.168.1.102 (static)\n- Smart TV: 192.168.1.150 (DHCP)\n- PS5: 192.168.1.151 (DHCP)\n\nPort Forwarding:\n- 22 -> NAS (SSH)\n- 443 -> NAS (HTTPS)\n- 32400 -> Plex Server\n\nWiFi Networks:\n- Main: HomeNetwork5G\n- Guest: GuestNetwork\n- IoT: SmartHome (isolated VLAN)\n\nDNS: Using Cloudflare (1.1.1.1, 1.0.0.1)\n\nBackup Internet: T-Mobile 5G Home\n- Only active if main cable connection fails\n- Auto-failover configured",
+    "content": "Home Network Setup\n\nRouter: ASUS RT-AX88U\nIP: 192.168.1.1\nAdmin: admin / [in password manager]\n\nDevices:\n- Desktop PC: 192.168.1.100 (static)\n- NAS: 192.168.1.101 (static)\n- Printer: 192.168.1.102 (static)\n- Smart TV: 192.168.1.150 (DHCP)\n- PS5: 192.168.1.151 (DHCP)\n\nPort Forwarding:\n- 22 -> NAS (SSH)\n- 443 -> NAS (HTTPS)\n- 32400 -> Plex Server\n\nWiFi Networks:\n- Main: HomeNetwork5G\n- Guest: GuestNetwork\n- IoT: SmartHome (isolated VLAN)\n\nDNS: Using Cloudflare (1.1.1.1, 1.0.0.1)\n\nBackup Internet: T-Mobile 5G Home\n- Only active if main cable connection fails\n- Auto-failover configuredxxx",
     "created": "2025-05-10T10:30:00.000000",
-    "modified": "2025-06-08T10:10:42.184684"
+    "modified": "2025-06-08T22:41:12.921535"
   },
   {
     "id": 11,
@@ -79,9 +79,9 @@
   {
     "id": 6,
     "title": "Rochester",
-    "content": "Rochester\n\nPlaces to visit:\n- Strong National Museum of Play\n- George Eastman Museum\n- Highland Park (lilac festival in May!)\n- Seabreeze Amusement Park\n- Rochester Public Market\n\nBest restaurants:\n- The Gate House (fine dining)\n- Dinosaur Bar-B-Que\n- Nick Tahou's (garbage plate!)\n- Jines Restaurant (breakfast)\n- Sticky Lips BBQ\n\nNotes from last visit:\n- Park Ave area great for shopping\n- Easy drive to Finger Lakes wine region\n- Winter is COLD - visit May through October\n- Strong Memorial Hospital area good for hotels",
+    "content": "Rochester\n\nPlaces to visit:\n- Strong National Museum of Play\n- George Eastman Museum\n- Highland Park (lilac festival in May!)\n- Seabreeze Amusement Park\n- Rochester Public Market\n\nBest restaurants:\n- The Gate House (fine dining)\n- Dinosaur Bar-B-Que\n- Nick Tahou's (garbage plate!)\n- Jines Restaurant (breakfast)\n- Sticky Lips BBQ\n\nNotes from last visit:\n- Park Ave area great for shopping\n- Easy drive to Finger Lakes wine region\n- Winter is COLD - visit May through October\n- Strong Memorial Hospital area good for hotelswkqc wkl",
     "created": "2025-06-08T08:40:18.009415",
-    "modified": "2025-06-08T08:41:36.807611"
+    "modified": "2025-06-08T23:35:59.156092"
   },
   {
     "id": 4,
@@ -100,9 +100,9 @@
   {
     "id": 22,
     "title": "Grocery List",
-    "content": "Grocery List\n\n- Milk (oat milk for Jenny)\n- Eggs (2 dozen)\n- Bread (sourdough and whole wheat)\n- Chicken breasts\n- Salmon fillets\n- Broccoli\n- Spinach\n- Bell peppers (red and yellow)\n- Avocados (4-5 ripe ones)\n- Bananas\n- Apples (Honeycrisp)\n- Greek yogurt\n- Cheddar cheese\n- Pasta (penne and linguine)\n- Olive oil\n- Coffee beans (dark roast)\n- Dark chocolate\n- Laundry detergent\n- Paper towels",
+    "content": "Grocery List\n\n- Milk (oat milk for Jenny)\n- Eggs (2 dozen)\n- Bread (sourdough and whole wheat)\n- Chicken breasts\n- Salmon fillets\n- Broccoli\n- Spinach\n- Bell peppers (red and yellow)\n- Avocados (4-5 ripe ones)\n- Bananas\n- Apples (Honeycrisp)\n- Greek yogurt\n- Cheddar cheese\n- Pasta (penne and linguine)\n- Olive oil\n- Coffee beans (dark roast)\n- Dark chocolate\n- Laundry detergent\n- Paper towelswe",
     "created": "2025-06-07T08:00:00.000000",
-    "modified": "2025-06-07T08:15:00.000000"
+    "modified": "2025-06-08T21:51:56.189277"
   },
   {
     "id": 7,
@@ -114,9 +114,9 @@
   {
     "id": 20,
     "title": "Workout Plan - Week 24",
-    "content": "Workout Plan - Week 24\n\nMonday - Chest & Triceps\n- Bench Press: 4x8-10\n- Incline Dumbbell Press: 3x10-12\n- Cable Flyes: 3x12-15\n- Tricep Dips: 3x10-12\n- Overhead Cable Extension: 3x12-15\n\nTuesday - Back & Biceps\n- Deadlifts: 4x6-8\n- Pull-ups: 4x8-10\n- Barbell Rows: 3x10-12\n- Hammer Curls: 3x10-12\n- Cable Curls: 3x12-15\n\nWednesday - Rest/Cardio\n- 30 min HIIT on treadmill\n- 10 min cooldown walk\n\nThursday - Legs\n- Squats: 4x8-10\n- Romanian Deadlifts: 3x10-12\n- Leg Press: 3x12-15\n- Calf Raises: 4x15-20\n\nFriday - Shoulders & Abs\n- Overhead Press: 4x8-10\n- Lateral Raises: 3x12-15\n- Face Pulls: 3x15-20\n- Plank: 3x60 seconds\n- Russian Twists: 3x20\n\nNotes: Increase weight on squats by 5lbs this week. Focus on form for deadlifts.",
+    "content": "Workout Plan - Week 24\n\nMonday - Chest & Triceps\n- Bench Press: 4x8-10\n- Incline Dumbbell Press: 3x10-12\n- Cable Flyes: 3x12-15\n- Tricep Dips: 3x10-12\n- Overhead Cable Extension: 3x12-15\n\nTuesday - Back & Biceps\n- Deadlifts: 4x6-8\n- Pull-ups: 4x8-10\n- Barbell Rows: 3x10-12\n- Hammer Curls: 3x10-12\n- Cable Curls: 3x12-15\n\nWednesday - Rest/Cardio\n- 30 min HIIT on treadmill\n- 10 min cooldown walk\n\nThursday - Legs\n- Squats: 4x8-10\n- Romanian Deadlifts: 3x10-12\n- Leg Press: 3x12-15\n- Calf Raises: 4x15-20\n\nFriday - Shoulders & Abs\n- Overhead Press: 4x8-10\n- Lateral Raises: 3x12-15\n- Face Pulls: 3x15-20\n- Plank: 3x60 seconds\n- Russian Twists: 3x20\n\nNotes: Increase weight on squats by 5lbs this week. Focus on form for deadlifts.xx",
     "created": "2025-06-05T07:00:00.000000",
-    "modified": "2025-06-05T07:30:00.000000"
+    "modified": "2025-06-08T22:41:21.250090"
   },
   {
     "id": 18,
@@ -128,9 +128,9 @@
   {
     "id": 17,
     "title": "Phone Numbers & Contacts",
-    "content": "Phone Numbers & Contacts\n\nDentist - Dr. Smith: (555) 123-4567\nMechanic - Joe's Auto: (555) 234-5678\nBabysitter - Emma: (555) 345-6789\nPlumber - Emergency: (555) 456-7890\nVet - Animal Hospital: (555) 567-8901\nPizza Delivery: (555) 678-9012\nHairdresser - Style Studio: (555) 789-0123\n\nWiFi Password: FluffyUnicorn2025!\nGarage Code: 4827\nGym Locker Combo: 15-30-45",
+    "content": "Phone Numbers & Contacts\n\nDentist - Dr. Smith: (555) 123-4567\nMechanic - Joe's Auto: (555) 234-5678\nBabysitter - Emma: (555) 345-6789\nPlumber - Emergency: (555) 456-7890\nVet - Animal Hospital: (555) 567-8901\nPizza Delivery: (555) 678-9012\nHairdresser - Style Studio: (555) 789-0123\n\nWiFi Password: FluffyUnicorn2025!\nGarage Code: 4827\nGym Locker Combo: 15-30-45dv",
     "created": "2025-06-03T12:00:00.000000",
-    "modified": "2025-06-04T14:20:00.000000"
+    "modified": "2025-06-08T23:36:05.690178"
   },
   {
     "id": 16,
@@ -163,15 +163,15 @@
   {
     "id": 10,
     "title": "Learning Spanish - Vocabulary",
-    "content": "Learning Spanish - Vocabulary\n\nWeek 12 Words:\n\nLa biblioteca - The library\nEl ordenador - The computer\nLa reunión - The meeting\nEl jefe - The boss\nLa oficina - The office\nEl proyecto - The project\nLa fecha límite - The deadline\nEl equipo - The team\nLa presentación - The presentation\nEl cliente - The client\n\nUseful phrases:\n- ¿Cuándo es la reunión? - When is the meeting?\n- Necesito más tiempo - I need more time\n- ¿Puedes ayudarme? - Can you help me?\n- No entiendo - I don't understand\n- ¿Puedes repetir? - Can you repeat?\n\nPractice sentences:\n1. Mi jefe quiere la presentación mañana\n2. El equipo trabaja en el proyecto\n3. La fecha límite es el viernes\n\nDuolingo streak: 84 days! 🔥\n",
+    "content": "Learning Spanish - Vocabulary\n\nWeek 12 Words:\n\nLa biblioteca - The library\nEl ordenador - The computer\nLa reunión - The meeting\nEl jefe - The boss\nLa oficina - The office\nEl proyecto - The project\nLa fecha límite - The deadline\nEl equipo - The team\nLa presentación - The presentation\nEl cliente - The client\n\nUseful phrases:\n- ¿Cuándo es la reunión? - When is the meeting?\n- Necesito más tiempo - I need more time\n- ¿Puedes ayudarme? - Can you help me?\n- No entiendo - I don't understand\n- ¿Puedes repetir? - Can you repeat?\n\nPractice sentences:\n1. Mi jefe quiere la presentación mañana\n2. El equipo trabaja en el proyecto\n3. La fecha límite es el viernes\n\nDuolingo streak: 84 days! 🔥\n,j nk ck",
     "created": "2025-05-27T19:00:00.000000",
-    "modified": "2025-06-08T10:19:43.324740"
+    "modified": "2025-06-08T23:36:02.123071"
   },
   {
     "id": 8,
     "title": "Meeting with Sarah - Project Alpha",
-    "content": "Meeting with Sarah - Project Alpha\n\nDate: May 25, 2025\nTime: 2:00 PM - 3:30 PM\n\nDiscussion Points:\n1. Timeline adjustment needed - originally Aug 1, now Sept 15\n2. Budget increase approved: additional $50k for contractors\n3. New requirement: Mobile app in addition to web\n4. Team concerns about scope creep\n\nAction items:\n- Update project charter with new scope\n- Schedule stakeholder meeting for next week\n- Research React Native vs Flutter for mobile\n- Prepare risk assessment for timeline change\n\nSarah's main concern: Client expecting same delivery date despite added scope\n\nFollow-up meeting scheduled: June 2, 10 AMs;dlmvl;",
+    "content": "Meeting with Sarah - Project Alpha\n\nDate: May 25, 2025\nTime: 2:00 PM - 3:30 PM\n\nDiscussion Points:\n1. Timeline adjustment needed - originally Aug 1, now Sept 15\n2. Budget increase approved: additional $50k for contractors\n3. New requirement: Mobile app in addition to web\n4. Team concerns about scope creep\n\nAction items:\n- Update project charter with new scope\n- Schedule stakeholder meeting for next week\n- Research React Native vs Flutter for mobile\n- Prepare risk assessment for timeline change\n\nSarah's main concern: Client expecting same delivery date despite added scope\n\nFollow-up meeting scheduled: June 2, 10 AMs;dlmvl;cdsvxx`mm.ds cewvewwcc\n\n\n\nccsv sevewd wd",
     "created": "2025-05-25T15:45:00.000000",
-    "modified": "2025-06-08T10:19:57.362680"
+    "modified": "2025-06-08T23:35:54.728024"
   }
 ]

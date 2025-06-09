@@ -202,10 +202,11 @@ ApplicationWindow {
     // Open note shortcuts
     Shortcut {
         sequences: ["Return", "Space"]
-        enabled: appState.canNavigate() && notesManager.filteredNotes.length > 0
+        enabled: appState.canNavigate() && notesManager.rowCount() > 0
         onActivated: {
-            if (selectedNoteIndex >= 0 && selectedNoteIndex < notesManager.filteredNotes.length) {
-                editNote(notesManager.filteredNotes[selectedNoteIndex].id)
+            if (selectedNoteIndex >= 0 && selectedNoteIndex < notesManager.rowCount()) {
+                var note = notesManager.getNoteByIndex(selectedNoteIndex)
+                if (note) editNote(note.id)
             }
         }
     }
@@ -213,7 +214,7 @@ ApplicationWindow {
     // Delete shortcuts
     Shortcut {
         sequence: "Delete"
-        enabled: appState.canNavigate() && notesManager.filteredNotes.length > 0
+        enabled: appState.canNavigate() && notesManager.rowCount() > 0
         onActivated: appState.modal = "delete"
     }
     
@@ -281,7 +282,7 @@ ApplicationWindow {
     Shortcut {
         sequence: notesManager.config.shortcuts.lastNote
         enabled: appState.canNavigate()
-        onActivated: selectedNoteIndex = Math.max(0, notesManager.filteredNotes.length - 1)
+        onActivated: selectedNoteIndex = Math.max(0, notesManager.rowCount() - 1)
     }
 
     // Font size control shortcuts
@@ -337,7 +338,7 @@ ApplicationWindow {
     }
 
     function navigateGrid(direction) {
-        if (notesManager.filteredNotes.length === 0 || navigating) return
+        if (notesManager.rowCount() === 0 || navigating) return
 
         navigating = true
         navigationTimer.restart()
@@ -352,13 +353,13 @@ ApplicationWindow {
                 selectedNoteIndex = Math.max(0, selectedNoteIndex - cols)
                 break
             case "down":
-                selectedNoteIndex = Math.min(notesManager.filteredNotes.length - 1, selectedNoteIndex + cols)
+                selectedNoteIndex = Math.min(notesManager.rowCount() - 1, selectedNoteIndex + cols)
                 break
             case "left":
                 selectedNoteIndex = Math.max(0, selectedNoteIndex - 1)
                 break
             case "right":
-                selectedNoteIndex = Math.min(notesManager.filteredNotes.length - 1, selectedNoteIndex + 1)
+                selectedNoteIndex = Math.min(notesManager.rowCount() - 1, selectedNoteIndex + 1)
                 break
         }
     }
@@ -371,7 +372,7 @@ ApplicationWindow {
             searchField.text = ""
             searchField.focus = false
         }
-        selectedNoteIndex = Math.min(selectedNoteIndex, Math.max(0, notesManager.filteredNotes.length - 1))
+        selectedNoteIndex = Math.min(selectedNoteIndex, Math.max(0, notesManager.rowCount() - 1))
         window.forceActiveFocus()
     }
 
@@ -398,7 +399,7 @@ ApplicationWindow {
         appState.view = "grid"
         appState.modal = "none"
         stackView.pop()
-        selectedNoteIndex = Math.min(selectedNoteIndex, Math.max(0, notesManager.filteredNotes.length - 1))
+        selectedNoteIndex = Math.min(selectedNoteIndex, Math.max(0, notesManager.rowCount() - 1))
     }
 
     function showNoteEditor() {
@@ -426,11 +427,11 @@ ApplicationWindow {
     }
 
     function confirmDelete() {
-        if (appState.isGridView() && selectedNoteIndex >= 0 && selectedNoteIndex < notesManager.filteredNotes.length) {
-            var noteToDelete = notesManager.filteredNotes[selectedNoteIndex]
+        if (appState.isGridView() && selectedNoteIndex >= 0 && selectedNoteIndex < notesManager.rowCount()) {
+            var noteToDelete = notesManager.getNoteByIndex(selectedNoteIndex)
             if (noteToDelete && noteToDelete.id !== undefined) {
                 notesManager.deleteNote(noteToDelete.id)
-                selectedNoteIndex = Math.min(selectedNoteIndex, Math.max(0, notesManager.filteredNotes.length - 1))
+                selectedNoteIndex = Math.min(selectedNoteIndex, Math.max(0, notesManager.rowCount() - 1))
             }
         } else if (appState.isEditing() && currentNoteId >= 0) {
             notesManager.deleteNote(currentNoteId)
@@ -438,6 +439,7 @@ ApplicationWindow {
         }
         appState.modal = "none"
     }
+
     StackView {
         id: stackView
         anchors.fill: parent
@@ -543,8 +545,9 @@ ApplicationWindow {
                 }
                 
                 onAccepted: {
-                    if (notesManager.filteredNotes.length > 0 && selectedNoteIndex >= 0) {
-                        editNote(notesManager.filteredNotes[selectedNoteIndex].id)
+                    if (notesManager.rowCount() > 0 && selectedNoteIndex >= 0) {
+                        var note = notesManager.getNoteByIndex(selectedNoteIndex)
+                        if (note) editNote(note.id)
                     }
                 }
                 
@@ -565,16 +568,17 @@ ApplicationWindow {
                         }[event.key]
                         navigateGrid(direction)
                     } else if (event.key === Qt.Key_Return) {
-                        if (notesManager.filteredNotes.length > 0 && selectedNoteIndex >= 0) {
+                        if (notesManager.rowCount() > 0 && selectedNoteIndex >= 0) {
                             event.accepted = true
-                            editNote(notesManager.filteredNotes[selectedNoteIndex].id)
+                            var note = notesManager.getNoteByIndex(selectedNoteIndex)
+                            if (note) editNote(note.id)
                         }
                     } else if (event.key === Qt.Key_Home) {
                         event.accepted = true
                         selectedNoteIndex = 0
                     } else if (event.key === Qt.Key_End) {
                         event.accepted = true
-                        selectedNoteIndex = Math.max(0, notesManager.filteredNotes.length - 1)
+                        selectedNoteIndex = Math.max(0, notesManager.rowCount() - 1)
                     }
                 }
                 
@@ -585,7 +589,7 @@ ApplicationWindow {
             }
             
             Text {
-                text: "Found: " + notesManager.filteredNotes.length + " | Esc to exit"
+                text: "Found: " + notesManager.rowCount() + " | Esc to exit"
                 color: "white"
                 font.family: notesManager.config.fontFamily
                 font.pixelSize: 12
@@ -960,6 +964,7 @@ ApplicationWindow {
                     height: parent.height - 80
                     ScrollBar.vertical.policy: ScrollBar.AlwaysOff
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    
                     GridView {
                         id: notesGrid
                         focus: true
@@ -973,7 +978,7 @@ ApplicationWindow {
 
                         cellWidth: notesManager.config.cardWidth + 20
                         cellHeight: notesManager.config.cardHeight + 20
-                        model: notesManager.filteredNotes
+                        model: notesManager
 
                         // Enable built-in auto-scrolling
                         currentIndex: selectedNoteIndex
@@ -1037,16 +1042,17 @@ ApplicationWindow {
                                 hoverEnabled: true
                                 onClicked: {
                                     selectedNoteIndex = index
-                                    editNote(modelData.id)
+                                    editNote(model.id)
                                 }
                             }
 
                             Item {
                                 anchors.fill: parent
                                 anchors.margins: 10
+                                
                                 Text {
                                     id: titleText
-                                    text: modelData.title
+                                    text: model.title || ""
                                     font.family: notesManager.config.fontFamily
                                     font.pixelSize: notesManager.config.cardTitleFontSize
                                     font.bold: true
@@ -1061,8 +1067,9 @@ ApplicationWindow {
                                 Text {
                                     id: contentText
                                     text: {
-                                        const idx = modelData.content.indexOf("\n");
-                                        return idx === -1 ? "" : modelData.content.slice(idx + 1);
+                                        var content = model.content || ""
+                                        var idx = content.indexOf("\n");
+                                        return idx === -1 ? "" : content.slice(idx + 1);
                                     }
                                     font.family: notesManager.config.fontFamily
                                     font.pixelSize: notesManager.config.cardFontSize
@@ -1081,8 +1088,9 @@ ApplicationWindow {
                                 Text {
                                     id: timestampText
                                     text: {
-                                        if (modelData.modified) {
-                                            var date = new Date(modelData.modified)
+                                        var modified = model.modified || ""
+                                        if (modified) {
+                                            var date = new Date(modified)
                                             var now = new Date()
                                             var diff = now - date
                                             var days = Math.floor(diff / (1000 * 60 * 60 * 24))
