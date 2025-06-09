@@ -303,7 +303,7 @@ ApplicationWindow {
 
         // Use actual current window width, not config
         var cols = Math.floor((window.width - 40) / (notesManager.config.cardWidth + 20))
-        console.log("Navigation - actual window width:", window.width, "cols:", cols)
+        //console.log("Navigation - actual window width:", window.width, "cols:", cols)
 
         var oldIndex = selectedNoteIndex
 
@@ -863,7 +863,6 @@ ApplicationWindow {
                     height: parent.height - 80
                     ScrollBar.vertical.policy:   ScrollBar.AlwaysOff
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-
                     GridView {
                         id: notesGrid
                         focus: true
@@ -872,55 +871,46 @@ ApplicationWindow {
                         cellWidth: notesManager.config.cardWidth + 20
                         cellHeight: notesManager.config.cardHeight + 20
                         model: notesManager.filteredNotes
-
-                        function ensureFullyVisible(idx) {
-                            if (idx < 0 || idx >= count)
-                                return;
-
-                            positionViewAtIndex(idx, GridView.Visible);
-
-                            var item = itemAtIndex(idx);
-                            if (!item) return;            // delegate not yet loaded
-
-                            var top    = item.y;
-                            var bottom = item.y + item.height;
-                            if (top < contentY)
-                                contentY = top;           // scroll up
-                            else if (bottom > contentY + height)
-                                contentY = bottom - height;   // scroll down
-                        }
-
-                        /* keyboard focus inside the grid */
-                        Keys.onPressed: notesGrid.ensureFullyVisible(window.selectedNoteIndex)
-
-                        /* react to ANY change of selectedNoteIndex */
+                        
+                        // Enable built-in auto-scrolling
+                        currentIndex: selectedNoteIndex
+                        highlightFollowsCurrentItem: true
+                        keyNavigationEnabled: false  // We handle navigation manually
+                        
+                        // Optional: Add highlight range for better positioning
+                        preferredHighlightBegin: height * 0.2
+                        preferredHighlightEnd: height * 0.8
+                        highlightRangeMode: GridView.ApplyRange
+                    
+                        // Performance optimizations
+                        cacheBuffer: Math.max(0, height * 2)
+                        displayMarginBeginning: 100
+                        displayMarginEnd: 100
+                        
+                        // React to selectedNoteIndex changes from window
                         Connections {
                             target: window
+                            function onSelectedNoteIndexChanged() {
+                                notesGrid.currentIndex = selectedNoteIndex
+                            }
                             function onWidthChanged() {
-                                // Small delay to let the resize settle
                                 recalcTimer.restart()
                             }
                             function onHeightChanged() {
                                 recalcTimer.restart()
                             }
                         }
-
+                    
                         Timer {
                             id: recalcTimer
                             interval: 100
                             repeat: false
                             onTriggered: {
-                                // Force GridView to recalculate
                                 notesGrid.cellWidth = notesManager.config.cardWidth + 20
                                 notesGrid.cellHeight = notesManager.config.cardHeight + 20
-                                console.log("GridView recalculated for window size:", window.width, "x", window.height)
                             }
                         }
-
-                        // Performance optimizations
-                        cacheBuffer: Math.max(0, height * 2)
-                        displayMarginBeginning: 100
-                        displayMarginEnd: 100
+                    
                         delegate: Rectangle {
                             id: noteCard
                             width: notesManager.config.cardWidth
@@ -933,7 +923,7 @@ ApplicationWindow {
                                             notesManager.config.accentColor : 
                                             notesManager.config.borderColor
                             border.width: index === selectedNoteIndex ? 3 : 1
-
+                    
                             states: [
                                 State {
                                     name: "hovered"
@@ -953,7 +943,7 @@ ApplicationWindow {
                                     }
                                 }
                             ]
-
+                    
                             MouseArea {
                                 id: mouseArea
                                 anchors.fill: parent
@@ -963,25 +953,25 @@ ApplicationWindow {
                                     editNote(modelData.id)
                                 }
                             }
-
+                    
                             Item {
                                 anchors.fill: parent
                                 anchors.margins: 10
-
+                    
                                 Text {
                                     id: titleText
                                     text: modelData.title
                                     font.family: notesManager.config.fontFamily
-                                    font.pixelSize: 14  // Fixed size
+                                    font.pixelSize: 14
                                     font.bold: true
                                     color: index === selectedNoteIndex ? "white" : notesManager.config.textColor
                                     width: parent.width
-                                    height: 20  // Fixed height
+                                    height: 20
                                     elide: Text.ElideRight
                                     anchors.top: parent.top
                                     wrapMode: Text.NoWrap
                                 }
-
+                    
                                 Text {
                                     id: contentText
                                     text: {
@@ -989,7 +979,7 @@ ApplicationWindow {
                                         return idx === -1 ? "" : modelData.content.slice(idx + 1);
                                     }
                                     font.family: notesManager.config.fontFamily
-                                    font.pixelSize: 12  // Fixed size
+                                    font.pixelSize: 12
                                     color: index === selectedNoteIndex ? 
                                             Qt.lighter("white", 0.5) : 
                                             notesManager.config.secondaryTextColor
@@ -1001,7 +991,7 @@ ApplicationWindow {
                                     wrapMode: Text.WordWrap
                                     clip: true
                                 }
-
+                    
                                 Text {
                                     id: timestampText
                                     text: {
@@ -1010,7 +1000,7 @@ ApplicationWindow {
                                             var now = new Date()
                                             var diff = now - date
                                             var days = Math.floor(diff / (1000 * 60 * 60 * 24))
-
+                    
                                             if (days === 0) return "Today"
                                             else if (days === 1) return "Yesterday"
                                             else if (days < 7) return days + " days ago"
@@ -1019,11 +1009,11 @@ ApplicationWindow {
                                         return ""
                                     }
                                     font.family: notesManager.config.fontFamily
-                                    font.pixelSize: 10  // Fixed size
+                                    font.pixelSize: 10
                                     color: notesManager.config.secondaryTextColor
                                     opacity: 0.5
                                     width: parent.width
-                                    height: 12  // Fixed height
+                                    height: 12
                                     anchors.bottom: parent.bottom
                                     elide: Text.ElideRight
                                 }
