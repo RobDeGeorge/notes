@@ -1,23 +1,25 @@
 {
-  "backgroundColor":      "#101010",
-  "cardColor":            "#1A1A1A",
-  "textColor":            "#E8E8E8",
-  "accentColor":          "#2196F3",
-  "secondaryTextColor":   "#A0A0A0",
-  "hoverColor":           "#2A2A2A",
-  "selectedCardColor":    "#333333",
-  "borderColor":          "#2D2D2D",
-  "placeholderColor":     "#555555",
-  "deleteButtonColor":    "#F44336",
-  "successColor":         "#4CAF50",
-  "warningColor":         "#FF9800",
-  "searchBarColor":       "#1A1A1A",
-  "searchBarTextColor":   "#E8E8E8",
+  "backgroundColor": "#101010",
+  "cardColor": "#1A1A1A",
+  "textColor": "#E8E8E8",
+  "accentColor": "#2196F3",
+  "secondaryTextColor": "#A0A0A0",
+  "hoverColor": "#2A2A2A",
+  "selectedCardColor": "#333333",
+  "borderColor": "#2D2D2D",
+  "placeholderColor": "#555555",
+  "deleteButtonColor": "#F44336",
+  "successColor": "#4CAF50",
+  "warningColor": "#FF9800",
+  "searchBarColor": "#1A1A1A",
+  "searchBarTextColor": "#E8E8E8",
   "fontFamily": "Victor Mono",
-  "fontSize": 12,
-  "cardFontSize": 4,
+  "fontSize": 16,
+  "cardFontSize": 12,
   "cardTitleFontSize": 14,
   "headerFontSize": 24,
+  "cardWidth": 230,
+  "cardHeight": 180,
   "windowWidth": 1040,
   "windowHeight": 600,
   "shortcuts": {
@@ -25,18 +27,39 @@
     "save": "Ctrl+S",
     "back": "Escape",
     "delete": "Delete",
-    "confirmDelete": ["Y", "Return"],
-    "cancelDelete": ["N", "Escape"],
+    "confirmDelete": [
+      "Y",
+      "Return"
+    ],
+    "cancelDelete": [
+      "N",
+      "Escape"
+    ],
     "quickDelete": "Ctrl+D",
     "search": "Ctrl+F",
     "searchNext": "F3",
     "searchPrev": "Shift+F3",
     "toggleView": "Tab",
-    "nextNote": ["Down", "J"],
-    "prevNote": ["Up", "K"],
-    "nextNoteHorizontal": ["Right", "L"],
-    "prevNoteHorizontal": ["Left", "H"],
-    "openNote": ["Return", "Space"],
+    "nextNote": [
+      "Down",
+      "J"
+    ],
+    "prevNote": [
+      "Up",
+      "K"
+    ],
+    "nextNoteHorizontal": [
+      "Right",
+      "L"
+    ],
+    "prevNoteHorizontal": [
+      "Left",
+      "H"
+    ],
+    "openNote": [
+      "Return",
+      "Space"
+    ],
     "firstNote": "Home",
     "lastNote": "End",
     "pageUp": "Page_Up",
@@ -49,6 +72,11 @@
     "redo": "Ctrl+Y",
     "find": "Ctrl+F",
     "quit": "Ctrl+Q",
-    "help": "F1"
-  }
+    "help": "F1",
+    "increaseFontSize": "Ctrl+=",
+    "decreaseFontSize": "Ctrl+-"
+  },
+  "maxUnsavedChanges": 50,
+  "autoSaveInterval": 1000,
+  "searchDebounceInterval": 300
 }

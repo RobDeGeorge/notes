@@ -5,8 +5,10 @@ import NotesApp 1.0
 
 ApplicationWindow {
     id: window
-    width:  notesManager.config.windowWidth
-    height: notesManager.config.windowHeight
+    width: 1200
+    height: 800
+    minimumWidth: 600
+    minimumHeight: 400
     visible: true
     title: "Simple Notes - Ultra Keyboard Friendly"
     color: notesManager.config.backgroundColor
@@ -282,16 +284,29 @@ ApplicationWindow {
         onActivated: selectedNoteIndex = Math.max(0, notesManager.filteredNotes.length - 1)
     }
 
-    // Navigation functions
+    // Font size control shortcuts
+    Shortcut {
+        sequence: notesManager.config.shortcuts.increaseFontSize
+        onActivated: notesManager.increaseFontSize()
+    }
+
+    Shortcut {
+        sequence: notesManager.config.shortcuts.decreaseFontSize
+        onActivated: notesManager.decreaseFontSize()
+    }
+
     function navigateGrid(direction) {
         if (notesManager.filteredNotes.length === 0 || navigating) return
-        
+
         navigating = true
         navigationTimer.restart()
-        
-        var cols = Math.floor((window.width - 40) / 250)
+
+        // Use actual current window width, not config
+        var cols = Math.floor((window.width - 40) / (notesManager.config.cardWidth + 20))
+        console.log("Navigation - actual window width:", window.width, "cols:", cols)
+
         var oldIndex = selectedNoteIndex
-        
+
         switch (direction) {
             case "up":
                 selectedNoteIndex = Math.max(0, selectedNoteIndex - cols)
@@ -462,6 +477,7 @@ ApplicationWindow {
                 placeholderText: "Type to search notes..."
                 text: notesManager.searchText
                 font.family: notesManager.config.fontFamily
+                font.pixelSize: 14
                 color: notesManager.config.searchBarTextColor
                 placeholderTextColor: notesManager.config.placeholderColor
                 
@@ -648,7 +664,7 @@ ApplicationWindow {
             Text {
                 text: "Keyboard Shortcuts"
                 font.family: notesManager.config.fontFamily
-                font.pixelSize: parent.height * 0.08
+                font.pixelSize: 28
                 font.bold: true
                 color: notesManager.config.textColor
                 anchors.horizontalCenter: parent.horizontalCenter
@@ -658,14 +674,14 @@ ApplicationWindow {
                 width: parent.width
                 height: parent.height * 0.75
                 columns: 1
-                spacing: parent.height * 0.008
+                spacing: 5
                 
                 HelpItem { 
                     label: "New Note" 
                     shortcut: notesManager.config.shortcuts.newNote 
                     width: parent.width
-                    itemHeight: parent.height * 0.055  
-                    fontSize: parent.height * 0.035    
+                    itemHeight: 30 
+                    fontSize: 12   
                 }
                 HelpItem { 
                     label: "Search" 
@@ -744,8 +760,22 @@ ApplicationWindow {
                     itemHeight: parent.height * 0.055
                     fontSize: parent.height * 0.035
                 }
+                HelpItem { 
+                    label: "Increase Font Size" 
+                    shortcut: notesManager.config.shortcuts.increaseFontSize 
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
+                }
+                HelpItem { 
+                    label: "Decrease Font Size" 
+                    shortcut: notesManager.config.shortcuts.decreaseFontSize 
+                    width: parent.width
+                    itemHeight: parent.height * 0.055
+                    fontSize: parent.height * 0.035
+                }
             }
-            
+
             Button {
                 text: "Close"
                 width: parent.width * 0.2
@@ -802,7 +832,7 @@ ApplicationWindow {
                             Text {
                                 text: "Note Collection" + (appState.modal === "search" ? " - Search Mode" : "")
                                 font.family: notesManager.config.fontFamily
-                                font.pixelSize: notesManager.config.headerFontSize
+                                font.pixelSize: 24
                                 color: notesManager.config.textColor
                             }
                         }                   
@@ -839,8 +869,8 @@ ApplicationWindow {
                         focus: true
                         anchors.fill: parent
                         anchors.margins: 20
-                        cellWidth: 250
-                        cellHeight: 200
+                        cellWidth: notesManager.config.cardWidth + 20
+                        cellHeight: notesManager.config.cardHeight + 20
                         model: notesManager.filteredNotes
 
                         function ensureFullyVisible(idx) {
@@ -866,18 +896,35 @@ ApplicationWindow {
                         /* react to ANY change of selectedNoteIndex */
                         Connections {
                             target: window
-                            onSelectedNoteIndexChanged:
-                                notesGrid.ensureFullyVisible(window.selectedNoteIndex)
+                            function onWidthChanged() {
+                                // Small delay to let the resize settle
+                                recalcTimer.restart()
+                            }
+                            function onHeightChanged() {
+                                recalcTimer.restart()
+                            }
                         }
+
+                        Timer {
+                            id: recalcTimer
+                            interval: 100
+                            repeat: false
+                            onTriggered: {
+                                // Force GridView to recalculate
+                                notesGrid.cellWidth = notesManager.config.cardWidth + 20
+                                notesGrid.cellHeight = notesManager.config.cardHeight + 20
+                                console.log("GridView recalculated for window size:", window.width, "x", window.height)
+                            }
+                        }
+
                         // Performance optimizations
                         cacheBuffer: Math.max(0, height * 2)
                         displayMarginBeginning: 100
                         displayMarginEnd: 100
-                        
                         delegate: Rectangle {
                             id: noteCard
-                            width: 230
-                            height: 180
+                            width: notesManager.config.cardWidth
+                            height: notesManager.config.cardHeight
                             color: index === selectedNoteIndex ? 
                                     notesManager.config.selectedCardColor : 
                                     notesManager.config.cardColor
@@ -886,7 +933,7 @@ ApplicationWindow {
                                             notesManager.config.accentColor : 
                                             notesManager.config.borderColor
                             border.width: index === selectedNoteIndex ? 3 : 1
-                            
+
                             states: [
                                 State {
                                     name: "hovered"
@@ -906,7 +953,7 @@ ApplicationWindow {
                                     }
                                 }
                             ]
-                            
+
                             MouseArea {
                                 id: mouseArea
                                 anchors.fill: parent
@@ -916,42 +963,45 @@ ApplicationWindow {
                                     editNote(modelData.id)
                                 }
                             }
-                            
+
                             Item {
                                 anchors.fill: parent
                                 anchors.margins: 10
-                                
+
                                 Text {
                                     id: titleText
                                     text: modelData.title
                                     font.family: notesManager.config.fontFamily
-                                    font.pixelSize: notesManager.config.cardTitleFontSize
+                                    font.pixelSize: 14  // Fixed size
                                     font.bold: true
                                     color: index === selectedNoteIndex ? "white" : notesManager.config.textColor
                                     width: parent.width
+                                    height: 20  // Fixed height
                                     elide: Text.ElideRight
                                     anchors.top: parent.top
+                                    wrapMode: Text.NoWrap
                                 }
-                                
+
                                 Text {
+                                    id: contentText
                                     text: {
                                         const idx = modelData.content.indexOf("\n");
                                         return idx === -1 ? "" : modelData.content.slice(idx + 1);
                                     }
                                     font.family: notesManager.config.fontFamily
-                                    font.pixelSize: notesManager.config.cardFontSize
+                                    font.pixelSize: 12  // Fixed size
                                     color: index === selectedNoteIndex ? 
                                             Qt.lighter("white", 0.5) : 
                                             notesManager.config.secondaryTextColor
                                     width: parent.width
                                     anchors.top: titleText.bottom
-                                    anchors.topMargin: 0
+                                    anchors.topMargin: 5
                                     anchors.bottom: timestampText.top
                                     anchors.bottomMargin: 5
                                     wrapMode: Text.WordWrap
                                     clip: true
                                 }
-                                
+
                                 Text {
                                     id: timestampText
                                     text: {
@@ -960,7 +1010,7 @@ ApplicationWindow {
                                             var now = new Date()
                                             var diff = now - date
                                             var days = Math.floor(diff / (1000 * 60 * 60 * 24))
-                                            
+
                                             if (days === 0) return "Today"
                                             else if (days === 1) return "Yesterday"
                                             else if (days < 7) return days + " days ago"
@@ -969,10 +1019,13 @@ ApplicationWindow {
                                         return ""
                                     }
                                     font.family: notesManager.config.fontFamily
-                                    font.pixelSize: 10
+                                    font.pixelSize: 10  // Fixed size
                                     color: notesManager.config.secondaryTextColor
                                     opacity: 0.5
+                                    width: parent.width
+                                    height: 12  // Fixed height
                                     anchors.bottom: parent.bottom
+                                    elide: Text.ElideRight
                                 }
                             }
                         }
@@ -1155,4 +1208,4 @@ ApplicationWindow {
             }
         }
     }
-    }
+}

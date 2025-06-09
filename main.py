@@ -36,7 +36,7 @@ class NotesManager(QObject):
         
         self.load_config()
         self.load_notes()
-    
+
     def load_config(self):
         default_config = {
             "backgroundColor": "#2b2b2b",
@@ -58,44 +58,48 @@ class NotesManager(QObject):
             "cardFontSize": 12,
             "cardTitleFontSize": 14,
             "headerFontSize": 24,
+            "cardWidth": 250,        # Add this
+            "cardHeight": 200,       # Add this
             "windowWidth": 1280,
             "windowHeight": 800,           
             "maxUnsavedChanges": 50,
             "autoSaveInterval": 1000,
             "searchDebounceInterval": 300,
             "shortcuts": {
-                "newNote": "Ctrl+N",
-                "save": "Ctrl+S",
-                "back": "Escape",
-                "delete": "Delete",
-                "confirmDelete": ["Y", "Return"],
-                "cancelDelete": ["N", "Escape"],
-                "quickDelete": "Ctrl+D",
-                "search": "Ctrl+F",
-                "searchNext": "F3",
-                "searchPrev": "Shift+F3",
-                "toggleView": "Tab",
-                "nextNote": ["Down", "J"],
-                "prevNote": ["Up", "K"],
-                "nextNoteHorizontal": ["Right", "L"],
-                "prevNoteHorizontal": ["Left", "H"],
-                "openNote": ["Return", "Space"],
-                "firstNote": "Home",
-                "lastNote": "End",
-                "pageUp": "Page_Up",
-                "pageDown": "Page_Down",
-                "selectAll": "Ctrl+A",
-                "copy": "Ctrl+C",
-                "cut": "Ctrl+X",
-                "paste": "Ctrl+V",
-                "undo": "Ctrl+Z",
-                "redo": "Ctrl+Y",
-                "find": "Ctrl+F",
-                "quit": "Ctrl+Q",
-                "help": "F1"
+            "newNote": "Ctrl+N",
+            "save": "Ctrl+S",
+            "back": "Escape",
+            "delete": "Delete",
+            "confirmDelete": ["Y", "Return"],
+            "cancelDelete": ["N", "Escape"],
+            "quickDelete": "Ctrl+D",
+            "search": "Ctrl+F",
+            "searchNext": "F3",
+            "searchPrev": "Shift+F3",
+            "toggleView": "Tab",
+            "nextNote": ["Down", "J"],
+            "prevNote": ["Up", "K"],
+            "nextNoteHorizontal": ["Right", "L"],
+            "prevNoteHorizontal": ["Left", "H"],
+            "openNote": ["Return", "Space"],
+            "firstNote": "Home",
+            "lastNote": "End",
+            "pageUp": "Page_Up",
+            "pageDown": "Page_Down",
+            "selectAll": "Ctrl+A",
+            "copy": "Ctrl+C",
+            "cut": "Ctrl+X",
+            "paste": "Ctrl+V",
+            "undo": "Ctrl+Z",
+            "redo": "Ctrl+Y",
+            "find": "Ctrl+F",
+            "quit": "Ctrl+Q",
+            "help": "F1",
+            "increaseFontSize": "Ctrl++",    # Add this
+            "decreaseFontSize": "Ctrl+-"     # Add this
             }
         }
-        
+
         try:
             if os.path.exists(self.config_file):
                 with open(self.config_file, 'r', encoding='utf-8') as f:
@@ -119,13 +123,13 @@ class NotesManager(QObject):
         except Exception as e:
             self.loadError.emit(f"Error loading config: {str(e)}")
             self._config = default_config
-    
+
     def validate_config(self, config, defaults):
         """Validate and sanitize configuration values"""
         validated = config.copy()
-        
+
         # Validate font sizes
-        size_keys = ['fontSize', 'cardTitleFontSize', 'headerFontSize']
+        size_keys = ['fontSize', 'cardTitleFontSize', 'headerFontSize', 'cardFontSize']
         for key in size_keys:
             if key in validated:
                 try:
@@ -133,13 +137,26 @@ class NotesManager(QObject):
                     validated[key] = max(8, min(72, size))
                 except (ValueError, TypeError):
                     validated[key] = defaults[key]
-        
+
+        # Validate card dimensions
+        card_keys = ['cardWidth', 'cardHeight']
+        for key in card_keys:
+            if key in validated:
+                try:
+                    size = int(validated[key])
+                    if key == 'cardWidth':
+                        validated[key] = max(150, min(500, size))
+                    else:  # cardHeight
+                        validated[key] = max(120, min(400, size))
+                except (ValueError, TypeError):
+                    validated[key] = defaults[key]
+
         # Validate colors
         color_pattern = re.compile(r'^#[0-9A-Fa-f]{6}$')
         for key, value in validated.items():
             if 'Color' in key and not color_pattern.match(str(value)):
                 validated[key] = defaults.get(key, "#ffffff")
-        
+
         # Validate numeric values
         numeric_keys = ['maxUnsavedChanges', 'autoSaveInterval', 'searchDebounceInterval', 'windowWidth', 'windowHeight']
         for key in numeric_keys:
@@ -149,8 +166,8 @@ class NotesManager(QObject):
                     validated[key] = max(50, val) if key == 'maxUnsavedChanges' else max(100, val)
                 except (ValueError, TypeError):
                     validated[key] = defaults.get(key, 1000)
-        
-        return validated
+
+        return validated    
     
     def save_config(self):
         try:
@@ -405,6 +422,40 @@ class NotesManager(QObject):
                 }
         return {}
 
+    @Slot()
+    def increaseFontSize(self):
+        """Increase only the main editor font size by 1 pixel"""
+        old_size = self._config["fontSize"]
+        self._config["fontSize"] = min(100, self._config["fontSize"] + 1)
+
+        if self._config["fontSize"] != old_size:
+            self.save_config()
+            self.configChanged.emit()   
+
+    @Slot()
+    def decreaseFontSize(self):
+        """Decrease only the main editor font size by 1 pixel"""
+        old_size = self._config["fontSize"]
+        self._config["fontSize"] = max(1, self._config["fontSize"] - 1)
+
+        if self._config["fontSize"] != old_size:
+            self.save_config()
+            self.configChanged.emit()
+
+    @Slot(int)
+    def setCardWidth(self, width):
+        """Set card width"""
+        self._config["cardWidth"] = max(150, min(400, width))
+        self.save_config()
+        self.configChanged.emit()
+    
+    @Slot(int)
+    def setCardHeight(self, height):
+        """Set card height"""
+        self._config["cardHeight"] = max(120, min(300, height))
+        self.save_config()
+        self.configChanged.emit()
+    
 def main():
     app = QGuiApplication(sys.argv)
     
