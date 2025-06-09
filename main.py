@@ -96,8 +96,10 @@ class NotesManager(QObject):
             "find": "Ctrl+F",
             "quit": "Ctrl+Q",
             "help": "F1",
-            "increaseFontSize": "Ctrl++",    # Add this
-            "decreaseFontSize": "Ctrl+-"     # Add this
+            "increaseCardTitleFontSize": "Ctrl+]",
+            "decreaseCardTitleFontSize": "Ctrl+[",
+            "increaseFontSize": "Ctrl++",   
+            "decreaseFontSize": "Ctrl+-"    
             }
         }
 
@@ -460,6 +462,26 @@ class NotesManager(QObject):
         self._config["cardFontSize"] = max(1, self._config["cardFontSize"] - 1)
         
         if self._config["cardFontSize"] != old_size:
+            self.save_config()
+            self.configChanged.emit()
+
+    @Slot()
+    def increaseCardTitleFontSize(self):
+        """Increase card title font size"""
+        old_width = self._config["cardTitleFontSize"]
+        self._config["cardTitleFontSize"] = min(32, self._config["cardTitleFontSize"] + 1)
+        
+        if self._config["cardTitleFontSize"] != old_width:
+            self.save_config()
+            self.configChanged.emit()
+    
+    @Slot()
+    def decreaseCardTitleFontSize(self):
+        """Decrease card title font size"""
+        old_width = self._config["cardTitleFontSize"]
+        self._config["cardTitleFontSize"] = max(1, self._config["cardTitleFontSize"] - 1)
+        
+        if self._config["cardTitleFontSize"] != old_width:
             self.save_config()
             self.configChanged.emit()
 
