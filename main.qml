@@ -328,16 +328,15 @@ ApplicationWindow {
 
     function navigateGrid(direction) {
         if (notesManager.filteredNotes.length === 0 || navigating) return
-
+    
         navigating = true
         navigationTimer.restart()
-
-        // Use actual current window width, not config
+    
+        // Simple calculation based on fixed margins and card spacing
         var cols = Math.floor((window.width - 40) / (notesManager.config.cardWidth + 20))
-        //console.log("Navigation - actual window width:", window.width, "cols:", cols)
-
+    
         var oldIndex = selectedNoteIndex
-
+    
         switch (direction) {
             case "up":
                 selectedNoteIndex = Math.max(0, selectedNoteIndex - cols)
@@ -429,50 +428,66 @@ ApplicationWindow {
         }
         appState.modal = "none"
     }
-
-    // Main content
     StackView {
         id: stackView
         anchors.fill: parent
         initialItem: gridView
 
-        popEnter: Transition {
-            PropertyAnimation {
-                property: "x"
-                from: -window.width
-                to: 0
-                duration: 200
-                easing.type: Easing.OutCubic
-            }
-        }
-
-        popExit: Transition {
-            PropertyAnimation {
-                property: "x"
-                from: 0
-                to: window.width
-                duration: 200
-                easing.type: Easing.OutCubic
-            }
-        }
-
         pushEnter: Transition {
-            PropertyAnimation {
-                property: "x"
-                from: window.width
-                to: 0
-                duration: 200
-                easing.type: Easing.OutCubic
+            ParallelAnimation {
+                PropertyAnimation {
+                    property: "scale"
+                    from: 0.8
+                    to: 1.0
+                    duration: 250
+                    easing.type: Easing.OutCubic
+                }
+                PropertyAnimation {
+                    property: "opacity"
+                    from: 0.0
+                    to: 1.0
+                    duration: 200
+                    easing.type: Easing.OutQuad
+                }
             }
         }
 
         pushExit: Transition {
             PropertyAnimation {
-                property: "x"
-                from: 0
-                to: -window.width
+                property: "opacity"
+                from: 1.0
+                to: 0.0
+                duration: 150
+                easing.type: Easing.InQuad
+            }
+        }
+
+        popEnter: Transition {
+            PropertyAnimation {
+                property: "opacity"
+                from: 0.0
+                to: 1.0
                 duration: 200
-                easing.type: Easing.OutCubic
+                easing.type: Easing.OutQuad
+            }
+        }
+
+        popExit: Transition {
+            ParallelAnimation {
+                PropertyAnimation {
+                    property: "scale"
+                    from: 1.0
+                    to: 0.8
+                    duration: 250
+                    easing.type: Easing.InCubic
+                }
+                PropertyAnimation {
+                    property: "opacity"
+                    from: 1.0
+                    to: 0.0
+                    duration: 200
+                    easing.type: Easing.InQuad
+                }
             }
         }
     }
@@ -895,84 +910,44 @@ ApplicationWindow {
                     height: parent.height - 80
                     ScrollBar.vertical.policy: ScrollBar.AlwaysOff
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-                    
                     GridView {
                         id: notesGrid
                         focus: true
                         anchors.fill: parent
-                        
-                        // Dynamic centering calculations
-                        property int availableWidth: width - 40 // Account for minimum margins
-                        property int cols: Math.max(1, Math.floor(availableWidth / (notesManager.config.cardWidth + 20)))
-                        property int actualGridWidth: cols * (notesManager.config.cardWidth + 20)
-                        property int centeringMargin: Math.max(20, (width - actualGridWidth) / 2)
-                        
-                        leftMargin: centeringMargin
-                        rightMargin: centeringMargin
+
+                        // Simple left-aligned layout with consistent margins
+                        leftMargin: 20
+                        rightMargin: 20
                         topMargin: 20
                         bottomMargin: 20
-                        
+
                         cellWidth: notesManager.config.cardWidth + 20
                         cellHeight: notesManager.config.cardHeight + 20
                         model: notesManager.filteredNotes
-                
+
                         // Enable built-in auto-scrolling
                         currentIndex: selectedNoteIndex
                         highlightFollowsCurrentItem: true
-                        keyNavigationEnabled: false  // We handle navigation manually
-                
-                        // Optional: Add highlight range for better positioning
+                        keyNavigationEnabled: false
+
+                        // Optimize highlight positioning
                         preferredHighlightBegin: height * 0.2
                         preferredHighlightEnd: height * 0.8
                         highlightRangeMode: GridView.ApplyRange
-                
+
                         // Performance optimizations
                         cacheBuffer: Math.max(0, height * 2)
                         displayMarginBeginning: 100
                         displayMarginEnd: 100
-                
+
                         // React to selectedNoteIndex changes from window
                         Connections {
                             target: window
                             function onSelectedNoteIndexChanged() {
                                 notesGrid.currentIndex = selectedNoteIndex
                             }
-                            function onWidthChanged() {
-                                recalcTimer.restart()
-                            }
-                            function onHeightChanged() {
-                                recalcTimer.restart()
-                            }
                         }
-                        
-                        // Update centering when config changes
-                        Connections {
-                            target: notesManager
-                            function onConfigChanged() {
-                                // Immediately update cell dimensions when config changes
-                                notesGrid.cellWidth = notesManager.config.cardWidth + 20
-                                notesGrid.cellHeight = notesManager.config.cardHeight + 20
-                                
-                                // Force recalculation of centering margins
-                                notesGrid.leftMargin = Qt.binding(function() { return notesGrid.centeringMargin })
-                                notesGrid.rightMargin = Qt.binding(function() { return notesGrid.centeringMargin })
-                            }
-                        }
-                
-                        Timer {
-                            id: recalcTimer
-                            interval: 100
-                            repeat: false
-                            onTriggered: {
-                                notesGrid.cellWidth = notesManager.config.cardWidth + 20
-                                notesGrid.cellHeight = notesManager.config.cardHeight + 20
-                                
-                                // Recalculate centering after dimension changes
-                                notesGrid.leftMargin = Qt.binding(function() { return notesGrid.centeringMargin })
-                                notesGrid.rightMargin = Qt.binding(function() { return notesGrid.centeringMargin })
-                            }
-                        }
-                
+
                         delegate: Rectangle {
                             id: noteCard
                             width: notesManager.config.cardWidth
@@ -985,7 +960,7 @@ ApplicationWindow {
                                             notesManager.config.accentColor : 
                                             notesManager.config.borderColor
                             border.width: index === selectedNoteIndex ? 3 : 1
-                
+
                             states: [
                                 State {
                                     name: "hovered"
@@ -1005,7 +980,7 @@ ApplicationWindow {
                                     }
                                 }
                             ]
-                
+
                             MouseArea {
                                 id: mouseArea
                                 anchors.fill: parent
@@ -1015,7 +990,7 @@ ApplicationWindow {
                                     editNote(modelData.id)
                                 }
                             }
-                
+
                             Item {
                                 anchors.fill: parent
                                 anchors.margins: 10
@@ -1023,7 +998,7 @@ ApplicationWindow {
                                     id: titleText
                                     text: modelData.title
                                     font.family: notesManager.config.fontFamily
-                                    font.pixelSize: notesManager.config.cardTitleFontSize  // Use config value
+                                    font.pixelSize: notesManager.config.cardTitleFontSize
                                     font.bold: true
                                     color: index === selectedNoteIndex ? "white" : notesManager.config.textColor
                                     width: parent.width
@@ -1032,7 +1007,7 @@ ApplicationWindow {
                                     anchors.top: parent.top
                                     wrapMode: Text.NoWrap
                                 }
-                
+
                                 Text {
                                     id: contentText
                                     text: {
@@ -1040,7 +1015,7 @@ ApplicationWindow {
                                         return idx === -1 ? "" : modelData.content.slice(idx + 1);
                                     }
                                     font.family: notesManager.config.fontFamily
-                                    font.pixelSize: notesManager.config.cardFontSize  // Use config value
+                                    font.pixelSize: notesManager.config.cardFontSize
                                     color: index === selectedNoteIndex ? 
                                             Qt.lighter("white", 0.5) : 
                                             notesManager.config.secondaryTextColor
@@ -1052,7 +1027,7 @@ ApplicationWindow {
                                     wrapMode: Text.WordWrap
                                     clip: true
                                 }
-                
+
                                 Text {
                                     id: timestampText
                                     text: {
@@ -1061,7 +1036,7 @@ ApplicationWindow {
                                             var now = new Date()
                                             var diff = now - date
                                             var days = Math.floor(diff / (1000 * 60 * 60 * 24))
-                
+
                                             if (days === 0) return "Today"
                                             else if (days === 1) return "Yesterday"
                                             else if (days < 7) return days + " days ago"
@@ -1070,7 +1045,7 @@ ApplicationWindow {
                                         return ""
                                     }
                                     font.family: notesManager.config.fontFamily
-                                    font.pixelSize: Math.max(8, notesManager.config.cardFontSize - 2)  // Slightly smaller than content
+                                    font.pixelSize: Math.max(8, notesManager.config.cardFontSize - 2)
                                     color: notesManager.config.secondaryTextColor
                                     opacity: 0.5
                                     width: parent.width
