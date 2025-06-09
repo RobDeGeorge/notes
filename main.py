@@ -6,8 +6,9 @@ from pathlib import Path
 from datetime import datetime
 from PySide6.QtGui import QGuiApplication, QFont
 from PySide6.QtQml import QmlElement, qmlRegisterType
-from PySide6.QtCore import QObject, Signal, Slot, Property, QUrl, QTimer
+from PySide6.QtCore import QObject, Signal, Slot, Property, QUrl, QTimer, Qt
 from PySide6.QtQml import QQmlApplicationEngine
+from PySide6.QtWidgets import QApplication  # Need this for widget attributes
 
 QML_IMPORT_NAME = "NotesApp"
 QML_IMPORT_MAJOR_VERSION = 1

@@ -888,36 +888,49 @@ ApplicationWindow {
                     }
                 }
                 
+                // Notes grid sectioncontent
                 // Notes grid section
                 ScrollView {
                     width: parent.width
                     height: parent.height - 80
-                    ScrollBar.vertical.policy:   ScrollBar.AlwaysOff
+                    ScrollBar.vertical.policy: ScrollBar.AlwaysOff
                     ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+                    
                     GridView {
                         id: notesGrid
                         focus: true
                         anchors.fill: parent
-                        anchors.margins: 20
+                        
+                        // Dynamic centering calculations
+                        property int availableWidth: width - 40 // Account for minimum margins
+                        property int cols: Math.max(1, Math.floor(availableWidth / (notesManager.config.cardWidth + 20)))
+                        property int actualGridWidth: cols * (notesManager.config.cardWidth + 20)
+                        property int centeringMargin: Math.max(20, (width - actualGridWidth) / 2)
+                        
+                        leftMargin: centeringMargin
+                        rightMargin: centeringMargin
+                        topMargin: 20
+                        bottomMargin: 20
+                        
                         cellWidth: notesManager.config.cardWidth + 20
                         cellHeight: notesManager.config.cardHeight + 20
                         model: notesManager.filteredNotes
-
+                
                         // Enable built-in auto-scrolling
                         currentIndex: selectedNoteIndex
                         highlightFollowsCurrentItem: true
                         keyNavigationEnabled: false  // We handle navigation manually
-
+                
                         // Optional: Add highlight range for better positioning
                         preferredHighlightBegin: height * 0.2
                         preferredHighlightEnd: height * 0.8
                         highlightRangeMode: GridView.ApplyRange
-
+                
                         // Performance optimizations
                         cacheBuffer: Math.max(0, height * 2)
                         displayMarginBeginning: 100
                         displayMarginEnd: 100
-
+                
                         // React to selectedNoteIndex changes from window
                         Connections {
                             target: window
@@ -931,15 +944,21 @@ ApplicationWindow {
                                 recalcTimer.restart()
                             }
                         }
+                        
+                        // Update centering when config changes
                         Connections {
                             target: notesManager
                             function onConfigChanged() {
                                 // Immediately update cell dimensions when config changes
                                 notesGrid.cellWidth = notesManager.config.cardWidth + 20
                                 notesGrid.cellHeight = notesManager.config.cardHeight + 20
+                                
+                                // Force recalculation of centering margins
+                                notesGrid.leftMargin = Qt.binding(function() { return notesGrid.centeringMargin })
+                                notesGrid.rightMargin = Qt.binding(function() { return notesGrid.centeringMargin })
                             }
                         }
-
+                
                         Timer {
                             id: recalcTimer
                             interval: 100
@@ -947,9 +966,13 @@ ApplicationWindow {
                             onTriggered: {
                                 notesGrid.cellWidth = notesManager.config.cardWidth + 20
                                 notesGrid.cellHeight = notesManager.config.cardHeight + 20
+                                
+                                // Recalculate centering after dimension changes
+                                notesGrid.leftMargin = Qt.binding(function() { return notesGrid.centeringMargin })
+                                notesGrid.rightMargin = Qt.binding(function() { return notesGrid.centeringMargin })
                             }
                         }
-
+                
                         delegate: Rectangle {
                             id: noteCard
                             width: notesManager.config.cardWidth
@@ -962,7 +985,7 @@ ApplicationWindow {
                                             notesManager.config.accentColor : 
                                             notesManager.config.borderColor
                             border.width: index === selectedNoteIndex ? 3 : 1
-
+                
                             states: [
                                 State {
                                     name: "hovered"
@@ -982,7 +1005,7 @@ ApplicationWindow {
                                     }
                                 }
                             ]
-
+                
                             MouseArea {
                                 id: mouseArea
                                 anchors.fill: parent
@@ -992,7 +1015,7 @@ ApplicationWindow {
                                     editNote(modelData.id)
                                 }
                             }
-
+                
                             Item {
                                 anchors.fill: parent
                                 anchors.margins: 10
@@ -1009,7 +1032,7 @@ ApplicationWindow {
                                     anchors.top: parent.top
                                     wrapMode: Text.NoWrap
                                 }
-
+                
                                 Text {
                                     id: contentText
                                     text: {
@@ -1029,7 +1052,7 @@ ApplicationWindow {
                                     wrapMode: Text.WordWrap
                                     clip: true
                                 }
-
+                
                                 Text {
                                     id: timestampText
                                     text: {
@@ -1038,7 +1061,7 @@ ApplicationWindow {
                                             var now = new Date()
                                             var diff = now - date
                                             var days = Math.floor(diff / (1000 * 60 * 60 * 24))
-
+                
                                             if (days === 0) return "Today"
                                             else if (days === 1) return "Yesterday"
                                             else if (days < 7) return days + " days ago"
