@@ -905,43 +905,50 @@ ApplicationWindow {
                     NumberAnimation { duration: 200 }
                 }
                 
-                // Header section
                 Rectangle {
                     width: parent.width
-                    height: 80
-                    color: notesManager.config.cardColor
-                    z: 2
-                    
-                    RowLayout {
-                        anchors.fill: parent
-                        anchors.margins: 15
+                    height: 90
+                    color: notesManager.config.backgroundColor
+                    z: 3
+                
+                    // Header section
+                    Rectangle {
+                        width: parent.width
+                        height: 80
+                        color: notesManager.config.cardColor
+                        z: 2
                         
-                        Column {
-                            Layout.fillWidth: true
+                        RowLayout {
+                            anchors.fill: parent
+                            anchors.margins: 15
                             
-                            Text {
-                                text: "Note Collection" + (appState.modal === "search" ? " - Search Mode" : "")
-                                font.family: notesManager.config.fontFamily
-                                font.pixelSize: 24
-                                color: notesManager.config.textColor
-                            }
-                        }                   
-                        Button {
-                            text: "New (" + notesManager.config.shortcuts.newNote + ")"
-                            enabled: !appState.hasModal()
-                            onClicked: createNewNote()
-                            
-                            background: Rectangle {
-                                color: notesManager.config.accentColor
-                                radius: 5
-                            }
-                            
-                            contentItem: Text {
-                                text: parent.text
-                                color: "white"
-                                font.family: notesManager.config.fontFamily
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
+                            Column {
+                                Layout.fillWidth: true
+                                
+                                Text {
+                                    text: "Note Collection" + (appState.modal === "search" ? " - Search Mode" : "")
+                                    font.family: notesManager.config.fontFamily
+                                    font.pixelSize: 24
+                                    color: notesManager.config.textColor
+                                }
+                            }                   
+                            Button {
+                                text: "New (" + notesManager.config.shortcuts.newNote + ")"
+                                enabled: !appState.hasModal()
+                                onClicked: createNewNote()
+                                
+                                background: Rectangle {
+                                    color: notesManager.config.accentColor
+                                    radius: 5
+                                }
+                                
+                                contentItem: Text {
+                                    text: parent.text
+                                    color: "white"
+                                    font.family: notesManager.config.fontFamily
+                                    horizontalAlignment: Text.AlignHCenter
+                                    verticalAlignment: Text.AlignVCenter
+                                }
                             }
                         }
                     }
