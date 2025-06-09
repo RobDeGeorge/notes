@@ -442,6 +442,66 @@ class NotesManager(QObject):
             self.save_config()
             self.configChanged.emit()
 
+    @Slot()
+    def increaseCardFontSize(self):
+        """Increase card font sizes"""
+        old_size = self._config["cardFontSize"]
+        self._config["cardFontSize"] = min(100, self._config["cardFontSize"] + 1)
+        
+        if self._config["cardFontSize"] != old_size:
+            self.save_config()
+            self.configChanged.emit()   
+
+    @Slot()
+    def decreaseCardFontSize(self):
+        """Decrease card font sizes"""
+        old_size = self._config["cardFontSize"]
+        self._config["cardFontSize"] = max(1, self._config["cardFontSize"] - 1)
+        
+        if self._config["cardFontSize"] != old_size:
+            self.save_config()
+            self.configChanged.emit()
+
+    @Slot()
+    def increaseCardWidth(self):
+        """Increase card width"""
+        old_width = self._config["cardWidth"]
+        self._config["cardWidth"] = min(500, self._config["cardWidth"] + 10)
+        
+        if self._config["cardWidth"] != old_width:
+            self.save_config()
+            self.configChanged.emit()
+    
+    @Slot()
+    def decreaseCardWidth(self):
+        """Decrease card width"""
+        old_width = self._config["cardWidth"]
+        self._config["cardWidth"] = max(150, self._config["cardWidth"] - 10)
+        
+        if self._config["cardWidth"] != old_width:
+            self.save_config()
+            self.configChanged.emit()
+    
+    @Slot()
+    def increaseCardHeight(self):
+        """Increase card height"""
+        old_height = self._config["cardHeight"]
+        self._config["cardHeight"] = min(400, self._config["cardHeight"] + 10)
+        
+        if self._config["cardHeight"] != old_height:
+            self.save_config()
+            self.configChanged.emit()
+    
+    @Slot()
+    def decreaseCardHeight(self):
+        """Decrease card height"""
+        old_height = self._config["cardHeight"]
+        self._config["cardHeight"] = max(120, self._config["cardHeight"] - 10)
+        
+        if self._config["cardHeight"] != old_height:
+            self.save_config()
+            self.configChanged.emit()
+
     @Slot(int)
     def setCardWidth(self, width):
         """Set card width"""

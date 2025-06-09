@@ -295,6 +295,37 @@ ApplicationWindow {
         onActivated: notesManager.decreaseFontSize()
     }
 
+    Shortcut {
+        sequence: notesManager.config.shortcuts.increaseCardFontSize
+        onActivated: notesManager.increaseCardFontSize()
+    }
+
+    Shortcut {
+        sequence: notesManager.config.shortcuts.decreaseCardFontSize
+        onActivated: notesManager.decreaseCardFontSize()
+    }
+
+    // Card dimension control shortcuts
+    Shortcut {
+        sequence: notesManager.config.shortcuts.increaseCardWidth
+        onActivated: notesManager.increaseCardWidth()
+    }
+
+    Shortcut {
+        sequence: notesManager.config.shortcuts.decreaseCardWidth
+        onActivated: notesManager.decreaseCardWidth()
+    }
+
+    Shortcut {
+        sequence: notesManager.config.shortcuts.increaseCardHeight
+        onActivated: notesManager.increaseCardHeight()
+    }
+
+    Shortcut {
+        sequence: notesManager.config.shortcuts.decreaseCardHeight
+        onActivated: notesManager.decreaseCardHeight()
+    }
+
     function navigateGrid(direction) {
         if (notesManager.filteredNotes.length === 0 || navigating) return
 
@@ -900,6 +931,14 @@ ApplicationWindow {
                                 recalcTimer.restart()
                             }
                         }
+                        Connections {
+                            target: notesManager
+                            function onConfigChanged() {
+                                // Immediately update cell dimensions when config changes
+                                notesGrid.cellWidth = notesManager.config.cardWidth + 20
+                                notesGrid.cellHeight = notesManager.config.cardHeight + 20
+                            }
+                        }
 
                         Timer {
                             id: recalcTimer
@@ -970,7 +1009,7 @@ ApplicationWindow {
                                     anchors.top: parent.top
                                     wrapMode: Text.NoWrap
                                 }
-                                
+
                                 Text {
                                     id: contentText
                                     text: {
@@ -990,7 +1029,7 @@ ApplicationWindow {
                                     wrapMode: Text.WordWrap
                                     clip: true
                                 }
-                                
+
                                 Text {
                                     id: timestampText
                                     text: {
@@ -999,7 +1038,7 @@ ApplicationWindow {
                                             var now = new Date()
                                             var diff = now - date
                                             var days = Math.floor(diff / (1000 * 60 * 60 * 24))
-                                
+
                                             if (days === 0) return "Today"
                                             else if (days === 1) return "Yesterday"
                                             else if (days < 7) return days + " days ago"
