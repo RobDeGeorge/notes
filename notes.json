@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "id": 2,
+    "title": "Improvements",
+    "content": "Improvements\n\nAll colors to config file, add accentColor for whites\nmultiple notebooks\nascii art somewhere\nexplore find feature further\ndrag and drop plus keybin solution to rearrange notes\nbetter id handling on the notes\nbetter note taking features\nadd screenshots\ntheme selection on a keybind\n\n",
+    "created": "2025-06-08T23:42:14.499040",
+    "modified": "2025-06-08T23:47:59.288926"
+  }
+]
